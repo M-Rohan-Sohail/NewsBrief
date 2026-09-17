@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsBrief Admin Dashboard</title>
+    <style>
+        :root {
+            --bg-color: #0F172A;
+            --card-bg: #1E293B;
+            --text-main: #F8FAFC;
+            --text-muted: #94A3B8;
+            --accent: #3B82F6;
+            --accent-hover: #2563EB;
+            --danger: #EF4444;
+            --success: #10B981;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-weight: 800;
+            margin-bottom: 40px;
+        }
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            width: 100%;
+            max-width: 900px;
+            margin-bottom: 40px;
+        }
+        .stat-card {
+            background-color: var(--card-bg);
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .stat-title {
+            font-size: 14px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        .actions {
+            background-color: var(--card-bg);
+            padding: 32px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+            box-sizing: border-box;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .actions h2 {
+            margin-top: 0;
+            margin-bottom: 16px;
+        }
+        .actions p {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+        button {
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+        button:disabled {
+            background-color: var(--text-muted);
+            cursor: not-allowed;
+        }
+        #status-msg {
+            margin-top: 16px;
+            font-weight: bold;
+        }
+        .success { color: var(--success); }
+        .error { color: var(--danger); }
+    </style>
+</head>
+<body>
+    <h1>NewsBrief Admin</h1>
+    
+    <div class="dashboard">
+        <div class="stat-card">
+            <div class="stat-title">Total Users</div>
+            <div class="stat-value" id="stat-users">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Premium Users</div>
+            <div class="stat-value" id="stat-premium">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Briefings Today</div>
+            <div class="stat-value" id="stat-briefings">-</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">Cards Today</div>
+            <div class="stat-value" id="stat-cards">-</div>
+        </div>
+    </div>
+
+    <div class="actions">
+        <h2>Manual Override</h2>
+        <p>Trigger the nightly AI generation pipeline immediately. This will run in the background.</p>
+        <button id="trigger-btn" onclick="triggerPipeline()">Run Pipeline Now</button>
+        <div id="status-msg"></div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const secretKey = urlParams.get('key') || '';
+
+        async function fetchStats() {
+            try {
+                const response = await fetch(`/admin/stats?key=${secretKey}`);
+                if (!response.ok) {
+                    document.getElementById('status-msg').innerText = "Unauthorized or failed to load stats.";
+                    document.getElementById('status-msg').className = "error";
+                    return;
+                }
+                const data = await response.json();
+                document.getElementById('stat-users').innerText = data.total_users;
+                document.getElementById('stat-premium').innerText = data.premium_users;
+                document.getElementById('stat-briefings').innerText = data.briefings_today;
+                document.getElementById('stat-cards').innerText = data.cards_today;
+            } catch (error) {
+                console.error("Error fetching stats:", error);
+            }
+        }
+
+        async function triggerPipeline() {
+            const btn = document.getElementById('trigger-btn');
+            const msg = document.getElementById('status-msg');
+            
+            btn.disabled = true;
+            btn.innerText = "Triggering...";
+            msg.innerText = "";
+            msg.className = "";
+
+            try {
+                const response = await fetch(`/admin/trigger-pipeline?key=${secretKey}`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    msg.innerText = "Pipeline successfully triggered in the background!";
+                    msg.className = "success";
+                } else {
+                    msg.innerText = "Failed to trigger pipeline. Unauthorized or error.";
+                    msg.className = "error";
+                }
+            } catch (error) {
+                msg.innerText = "Network error occurred.";
+                msg.className = "error";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Run Pipeline Now";
+            }
+        }
+
+        // Initial load
+        fetchStats();
+    </script>
+</body>
+</html>

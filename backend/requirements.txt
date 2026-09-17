@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+pydantic
+sentence-transformers
+groq
+google-api-python-client
+apscheduler
+alembic
+PyJWT
+google-auth
+requests
