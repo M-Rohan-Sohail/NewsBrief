@@ -17,3 +17,5 @@ pytest
 pgvector==0.3.6
 resend==2.6.0
 edge-tts==6.1.12
+slack-sdk==3.34.0
+slack-bolt==1.22.0

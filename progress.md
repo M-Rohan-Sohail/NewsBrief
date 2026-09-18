@@ -144,11 +144,11 @@
 - `[x]` Write automated test `backend/tests/test_audio_service.py` verifying valid MP3 output without requiring paid keys.
 
 ## Checkpoint 22: Team Slack Bot & Workspace Integration
-- `[ ]` Add `slack-sdk==3.34.0` and `slack-bolt==1.22.0` to `backend/requirements.txt`.
-- `[ ]` Implement `backend/services/slack_service.py` to construct Block Kit payloads for briefings.
-- `[ ]` Implement `backend/routers/slack_router.py` with OAuth routes (`/slack/install`, `/slack/oauth_callback`).
-- `[ ]` Mount Slack router in `backend/main.py`.
-- `[ ]` Write automated test `backend/tests/test_slack_service.py` verifying Block Kit schema.
+- `[x]` Add `slack-sdk==3.34.0` and `slack-bolt==1.22.0` to `backend/requirements.txt`.
+- `[x]` Implement `backend/services/slack_service.py` to construct Block Kit payloads for briefings.
+- `[x]` Implement `backend/routers/slack_router.py` with OAuth routes (`/slack/install`, `/slack/oauth_callback`).
+- `[x]` Mount Slack router in `backend/main.py`.
+- `[x]` Write automated test `backend/tests/test_slack_service.py` verifying Block Kit schema.
 
 ## Checkpoint 23: Frontend Modernization & Audio Player
 - `[ ]` Add `expo-av@~15.0.2` to `frontend/package.json`.

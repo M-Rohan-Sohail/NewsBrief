@@ -27,6 +27,9 @@ import asyncio
 # Typically loaded from environment
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "dummy_google_client_id.apps.googleusercontent.com")
 
+from routers.slack_router import slack_router
+app.include_router(slack_router)
+
 scheduler = BackgroundScheduler()
 
 def daily_pipeline_job():
