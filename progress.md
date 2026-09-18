@@ -87,3 +87,86 @@
 - `[x]` Create basic internal endpoints for batch stats and manual triggers.
 - `[x]` Build simple React admin page (or serve basic HTML from FastAPI).
 *Not implemented:* Complex analytics, charting, or user moderation tooling.
+
+---
+
+# Redesign Phase: Autonomous Market & Competitor Intelligence (Checkpoints 16–25)
+
+## Checkpoint 16: Multi-Source Ingestion Engine
+- `[x]` Add `feedparser==6.0.11` and `httpx==0.27.0` to `backend/requirements.txt`.
+- `[x]` Add `RawArticle` Pydantic model to `backend/schemas.py` (`id`, `title`, `url`, `source_name`, `content`, `published_at`, `tags`, `score`).
+- `[x]` Implement `backend/ingestion_sources/hn.py` to query Hacker News Firebase API for top 30 stories with score >= 30.
+- `[x]` Implement `backend/ingestion_sources/github.py` to query GitHub Search API for trending repos (>100 stars in last 7 days).
+- `[x]` Implement `backend/ingestion_sources/arxiv.py` to query arXiv API for `cat:cs.AI OR cat:cs.LG OR cat:cs.CL` and parse XML abstracts.
+- `[x]` Implement `backend/ingestion_sources/rss.py` to parse curated Substack/tech feeds using `feedparser`.
+- `[x]` Write automated test `backend/tests/test_ingestion_sources.py` verifying >60 unique articles extracted.
+
+## Checkpoint 17: Database Schema Migration & pgvector Integration
+- `[ ]` Add `pgvector==0.3.6` to `backend/requirements.txt`.
+- `[ ]` Register `pgvector` in `backend/db.py` (`CREATE EXTENSION IF NOT EXISTS vector`).
+- `[ ]` Add `embedding = Column(Vector(384))` to `models.NewsCluster` and `preference_embedding = Column(Vector(384))` to `models.UserPreference`.
+- `[ ]` Add B2B models to `backend/models.py`: `Team`, `TeamMembership`, `SlackInstallation`, and `UserEmailPreference`.
+- `[ ]` Add `audio_url` and `audio_duration_seconds` to `models.SuperSummary`.
+- `[ ]` Create and execute Alembic migration `backend/alembic/versions/0002_add_pgvector_and_b2b_models.py`.
+- `[ ]` Write automated test `backend/tests/test_database_vector.py` verifying vector insert and `<=>` cosine distance search.
+
+## Checkpoint 18: Stage 1 Global World-State Pipeline
+- `[ ]` Implement `backend/pipeline_stage1.py` to run independently of individual users.
+- `[ ]` Concurrently aggregate articles across all 4 ingestion sources into a single raw pool (~400–600 items).
+- `[ ]` Deduplicate articles using `SentenceTransformer("all-MiniLM-L6-v2")` with cosine threshold 0.82.
+- `[ ]` Cluster surviving articles into 40–70 canonical clusters via Groq (`qwen/qwen3.8-27b`).
+- `[ ]` Calculate normalized centroid embedding for each cluster and assign to `NewsCluster.embedding`.
+- `[ ]` Pre-generate base Cards (`high_signal`, `technical_deep`) and top 10 Deep Dives once into the database.
+- `[ ]` Write automated test `backend/tests/test_pipeline_stage1.py` verifying DB persistence.
+
+## Checkpoint 19: Stage 2 User Matching & Personalization Engine
+- `[ ]` Implement `backend/pipeline_stage2.py` for personalized briefing generation.
+- `[ ]` Auto-compute user preference vector if null (`raw_paragraph` + `thematic_tags` + `search_queries`).
+- `[ ]` Query PostgreSQL for top 6 matching clusters via `ORDER BY embedding.cosine_distance(user_vector) LIMIT 6`.
+- `[ ]` Synthesize custom Super Summary in user's specified `tone_bucket` via Groq.
+- `[ ]` Create and link `UserBriefing` record (execution speed < 1.5s per user).
+- `[ ]` Add endpoint `POST /admin/trigger-stage2` in `backend/main.py`.
+- `[ ]` Write automated test `backend/tests/test_pipeline_stage2.py`.
+
+## Checkpoint 20: Daily Email Digest Service (Resend Integration)
+- `[ ]` Add `resend==2.6.0` to `backend/requirements.txt`.
+- `[ ]` Implement `backend/services/email_service.py` to dispatch HTML emails via Resend API.
+- `[ ]` Design responsive HTML template `backend/templates/email_digest.html` with Super Summary, top 3 cards, and deep dive links.
+- `[ ]` Add endpoints `GET /users/me/email-preferences` and `PUT /users/me/email-preferences` in `backend/main.py`.
+- `[ ]` Write automated test `backend/tests/test_email_service.py` with mocked Resend client.
+
+## Checkpoint 21: Daily Audio Briefing Engine (TTS)
+- `[ ]` Add `openai==1.65.0` to `backend/requirements.txt`.
+- `[ ]` Implement `backend/services/audio_service.py`: prompt Groq for 300-word broadcast script and synthesize via OpenAI TTS (`tts-1`, voice `onyx`).
+- `[ ]` Store MP3 in `backend/static/audio/{batch_date}/{summary_id}.mp3` and set `SuperSummary.audio_url`.
+- `[ ]` Expose streaming endpoint `GET /briefing/today/audio` in `backend/main.py`.
+- `[ ]` Write automated test `backend/tests/test_audio_service.py` verifying valid MP3 output.
+
+## Checkpoint 22: Team Slack Bot & Workspace Integration
+- `[ ]` Add `slack-sdk==3.34.0` and `slack-bolt==1.22.0` to `backend/requirements.txt`.
+- `[ ]` Implement `backend/services/slack_service.py` to construct Block Kit payloads for briefings.
+- `[ ]` Implement `backend/routers/slack_router.py` with OAuth routes (`/slack/install`, `/slack/oauth_callback`).
+- `[ ]` Mount Slack router in `backend/main.py`.
+- `[ ]` Write automated test `backend/tests/test_slack_service.py` verifying Block Kit schema.
+
+## Checkpoint 23: Frontend Modernization & Audio Player
+- `[ ]` Add `expo-av@~15.0.2` to `frontend/package.json`.
+- `[ ]` Create `frontend/src/components/AudioPlayer.tsx` with Play/Pause and progress bar.
+- `[ ]` Embed `AudioPlayer` on `HomeScreen.tsx` above Super Summary.
+- `[ ]` Update `PaywallScreen.tsx` with 4-tier pricing ($0 Free, $9.99 Pro, $24.99 Executive, $99 Team).
+- `[ ]` Create `frontend/src/components/ExpenseModal.tsx` for 1-click corporate reimbursement receipts.
+- `[ ]` Update `frontend/src/types.ts` with `audio_url` and new subscription tier types.
+
+## Checkpoint 24: Distributed Task Queue (Redis + Arq)
+- `[ ]` Add `arq==0.26.1` and `redis==5.2.1` to `backend/requirements.txt`.
+- `[ ]` Implement `backend/worker.py` configuring Arq worker, cron schedules (03:00 UTC Stage 1, hourly Stage 2), and retry policies.
+- `[ ]` Create `docker-compose.yml` orchestrating FastAPI, Redis, and Arq worker.
+- `[ ]` Write automated test `backend/tests/test_worker_tasks.py`.
+
+## Checkpoint 25: Admin Dashboard 2.0 & Telemetry
+- `[ ]` Revamp `backend/admin.html` with Tailwind CSS, source health indicators (HN, GitHub, arXiv, RSS), and cost counters.
+- `[ ]` Expand `GET /admin/stats` in `backend/main.py` to return source counts, token spend, and channel metrics.
+- `[ ]` Add manual trigger buttons for Stage 1, Stage 2, and test email.
+- `[ ]` Write automated test `backend/tests/test_admin_endpoints.py`.
+
+

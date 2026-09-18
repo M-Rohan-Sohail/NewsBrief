@@ -46,3 +46,16 @@ class BriefingResponse(BaseModel):
 class CardViewResponse(BaseModel):
     limit_reached: bool
     views_today: int
+
+from datetime import datetime
+
+class RawArticle(BaseModel):
+    id: str
+    title: str
+    url: str
+    source_name: str
+    content: str
+    published_at: Optional[datetime] = None
+    tags: List[str] = []
+    author: Optional[str] = None
+    score: Optional[int] = 0

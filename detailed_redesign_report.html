@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NewsBrief: Comprehensive Architectural Specification & Checkpoint Blueprint</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 14mm 18mm 14mm;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #0F172A;
+    line-height: 1.5;
+    font-size: 10pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .cover {
+    min-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 24px;
+    box-sizing: border-box;
+    border-left: 8px solid #2563EB;
+  }
+  .cover h1 {
+    font-size: 30pt;
+    font-weight: 800;
+    color: #0F172A;
+    margin: 0 0 10px 0;
+    line-height: 1.15;
+  }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: #2563EB;
+    font-weight: 600;
+    margin-bottom: 20px;
+    letter-spacing: 0.5px;
+  }
+  .cover .tagline {
+    font-size: 11.5pt;
+    color: #475569;
+    max-width: 620px;
+    line-height: 1.6;
+    margin-bottom: 35px;
+  }
+  .cover .meta {
+    font-size: 9pt;
+    color: #64748B;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 18px;
+  }
+  .cover .meta p {
+    margin: 3px 0;
+  }
+  
+  h2 {
+    color: #0F172A;
+    font-size: 16pt;
+    border-bottom: 2px solid #2563EB;
+    padding-bottom: 5px;
+    margin-top: 24px;
+    margin-bottom: 10px;
+  }
+  h3 {
+    color: #1E293B;
+    font-size: 12pt;
+    margin-top: 16px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid #E2E8F0;
+    padding-bottom: 3px;
+  }
+  h4 {
+    color: #334155;
+    font-size: 10.5pt;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+  p {
+    margin: 0 0 8px 0;
+  }
+  ul, ol {
+    margin: 0 0 10px 0;
+    padding-left: 20px;
+  }
+  li {
+    margin-bottom: 4px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 16px 0;
+    font-size: 8.5pt;
+  }
+  th, td {
+    border: 1px solid #CBD5E1;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background-color: #F1F5F9;
+    color: #0F172A;
+    font-weight: 700;
+  }
+  tr:nth-child(even) {
+    background-color: #F8FAFC;
+  }
+  .callout {
+    background-color: #EFF6FF;
+    border-left: 4px solid #2563EB;
+    padding: 8px 12px;
+    margin: 10px 0;
+    border-radius: 0 4px 4px 0;
+    font-size: 9pt;
+  }
+  .callout-warning {
+    background-color: #FFFBEB;
+    border-left: 4px solid #F59E0B;
+    color: #92400E;
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 7pt;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .badge-blue { background: #DBEAFE; color: #1D4ED8; }
+  .badge-green { background: #DCFCE7; color: #15803D; }
+  .badge-amber { background: #FEF3C7; color: #B45309; }
+  .badge-purple { background: #F3E8FF; color: #7E22CE; }
+  .badge-red { background: #FEE2E2; color: #B91C1C; }
+  
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 8.5pt;
+    background: #F1F5F9;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #0F172A;
+  }
+  pre {
+    background: #0F172A;
+    color: #F8FAFC;
+    padding: 10px;
+    border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    overflow-x: auto;
+    margin: 8px 0 12px 0;
+  }
+  
+  .cp-box {
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 16px;
+    background: #FFFFFF;
+    page-break-inside: avoid;
+  }
+  .cp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 800;
+    font-size: 11pt;
+    color: #0F172A;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 6px;
+    margin-bottom: 8px;
+  }
+  .cp-section-title {
+    font-weight: 700;
+    font-size: 9pt;
+    text-transform: uppercase;
+    color: #475569;
+    margin: 8px 0 4px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="subtitle">EXHAUSTIVE TECHNICAL SPECIFICATION &amp; EXECUTION MANUAL</div>
+  <h1>NewsBrief: Redesign &amp; Refactoring Blueprint</h1>
+  <div class="tagline">
+    Zero-Ambiguity Engineering Roadmap for Google Antigravity IDE.<br>
+    Transforming from a consumer news aggregator into an Autonomous Market &amp; Competitor Intelligence SaaS for Tech Leaders, Founders, and Product Teams.
+  </div>
+  <div class="meta">
+    <p><strong>System Architect:</strong> Antigravity AI</p>
+    <p><strong>Target Repository:</strong> <code>/home/rohan/Desktop/StartupX</code></p>
+    <p><strong>Refactoring Checkpoints:</strong> CP-16 through CP-25 (Deterministic Execution)</p>
+    <p><strong>Document Version:</strong> 3.0 (Comprehensive Implementation-Ready Edition)</p>
+    <p><strong>Date:</strong> September 2026</p>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 1: ARCHITECTURAL PRINCIPLES -->
+<h2>1. Architectural Evolution &amp; Zero-Assumption Principles</h2>
+<p>
+This specification provides an exact, deterministic instruction manual for Google Antigravity IDE. No design decisions are left unspecified. Every checkpoint defines <strong>Target Files</strong>, <strong>Dependencies</strong>, <strong>Data Models</strong>, <strong>Exact Algorithms/Signatures</strong>, and <strong>Verification Commands</strong>.
+</p>
+
+<h3>1.1 The Fundamental Structural Problem</h3>
+<p>
+Currently, <code>backend/run_pipeline.py</code> executes a linear loop per registered user:
+</p>
+<pre>
+For each User:
+    For each Search Query (5-8 queries):
+        Serper.dev News Search (3 links)
+        Jina Reader Scrape (3 pages)
+    sentence-transformers Deduplication
+    Groq LLM Thematic Clustering
+    Groq LLM Card Generation
+    Groq LLM Super Summary Generation
+    Save to DB & Send Push
+</pre>
+<p>
+<strong>Failure Modes:</strong>
+</p>
+<ul>
+  <li><strong>Quadratic Scaling &amp; Rate Limits:</strong> 1,000 users with overlapping interests trigger 6,000 Serper searches, 18,000 Jina scrapes, and 6,000 Groq cluster calls. Serper and Jina API keys will be throttled within minutes, and monthly costs will exceed $1,500.</li>
+  <li><strong>SEO Spam &amp; PR Farm Poisoning:</strong> Serper returns syndicated PR newswires and content-farm blog posts, degrading summary quality for technical founders.</li>
+  <li><strong>Single Point of Failure Delivery:</strong> Only delivering via Mobile Push means if an iOS or Android user denies notification permissions, engagement drops to zero.</li>
+</ul>
+
+<h3>1.2 The Two-Stage Decoupled World-State Architecture</h3>
+<p>
+We decouple the system into two distinct operational stages running on separate schedules:
+</p>
+
+<pre>
+STAGE 1: GLOBAL WORLD-STATE INGESTION & CLUSTERING (Daily at 03:00 UTC)
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ Sources: Hacker News (Firebase), GitHub Trending, arXiv Preprints, Curated Tech RSS    │
+│ Pipeline: Ingest All Raw Articles (Pool: ~500) -> Semantic Dedup -> Groq Clustering   │
+│ Output: 50–80 Canonical NewsClusters with 384-dim Centroid Embeddings in PostgreSQL    │
+│ Pre-generation: Base Cards & Top-10 In-depth Research Deep Dives generated ONCE.       │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+STAGE 2: PERSONALIZED USER DELIVERY ENGINE (Daily at 06:30 Local User Time)
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ 1. Vector Match: User Preference Embedding <=> Cluster Embeddings (via pgvector)       │
+│ 2. Select: Top 5-7 highest similarity clusters for the individual user                 │
+│ 3. Synthesize: User-tailored Super Summary in user's configured tone bucket (1.2s LLM) │
+│ 4. Dispatch: Multi-channel delivery to Email Digest, Mobile Push, Audio TTS, Slack Bot │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+</pre>
+
+<div class="page-break"></div>
+
+<!-- SECTION 2: THE 10 DETAILED CHECKPOINTS -->
+<h2>2. Complete Engineering Checkpoints (CP-16 to CP-25)</h2>
+
+<!-- CHECKPOINT 16 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 16: Multi-Source High-Signal Ingestion Engine</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Build modular, robust scrapers for Hacker News, GitHub Trending, arXiv, and Substack RSS to feed the daily raw article pool, eliminating exclusive dependency on Serper.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[NEW] backend/ingestion_sources/__init__.py</code></li>
+    <li><code>[NEW] backend/ingestion_sources/hn.py</code> — Hacker News Firebase REST API reader.</li>
+    <li><code>[NEW] backend/ingestion_sources/github.py</code> — GitHub Trending repos &amp; releases crawler.</li>
+    <li><code>[NEW] backend/ingestion_sources/arxiv.py</code> — arXiv API client &amp; XML abstract extractor.</li>
+    <li><code>[NEW] backend/ingestion_sources/rss.py</code> — Substack / Tech Blog RSS parser via <code>feedparser</code>.</li>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>feedparser==6.0.11</code>, <code>httpx==0.27.0</code>.</li>
+    <li><code>[MODIFY] backend/schemas.py</code> — Add <code>RawArticle</code> Pydantic model.</li>
+    <li><code>[NEW] backend/tests/test_ingestion_sources.py</code> — Automated unit tests for all 4 sources.</li>
+  </ul>
+
+  <div class="cp-section-title">Data Contracts &amp; Schemas (backend/schemas.py)</div>
+  <pre>
+class RawArticle(BaseModel):
+    id: str = Field(..., description="Unique hash or source-specific ID")
+    title: str
+    url: str
+    source_name: str  # 'Hacker News', 'GitHub', 'arXiv', 'Substack: Stratechery'
+    content: str      # Clean text or markdown body (min 150 chars)
+    published_at: Optional[datetime] = None
+    tags: List[str] = []
+    author: Optional[str] = None
+    score: Optional[int] = 0  # Upvotes / Stars
+</pre>
+
+  <div class="cp-section-title">Exact Implementation Instructions</div>
+  <ul>
+    <li><strong>HN Module (<code>hn.py</code>):</strong>
+      Call <code>https://hacker-news.firebaseio.com/v0/topstories.json</code>. Fetch item details for the top 30 IDs from <code>https://hacker-news.firebaseio.com/v0/item/{id}.json</code>. Filter for stories with score &gt;= 30. Extract URL and title; if story is a text post (Ask HN / Show HN), use <code>item.text</code> as content. If external link, call Jina Reader with 5s timeout.
+    </li>
+    <li><strong>GitHub Module (<code>github.py</code>):</strong>
+      Call GitHub Search API <code>https://api.github.com/search/repositories?q=created:&gt;{7_days_ago}+stars:&gt;100&amp;sort=stars&amp;order=desc</code>. Map top 15 repositories to <code>RawArticle</code> with content set to repo description, primary language, star count, and <code>README.md</code> first 800 characters.
+    </li>
+    <li><strong>arXiv Module (<code>arxiv.py</code>):</strong>
+      Call arXiv API <code>http://export.arxiv.org/api/query?search_query=cat:cs.AI+OR+cat:cs.LG+OR+cat:cs.CL&amp;start=0&amp;max_results=25&amp;sortBy=submittedDate&amp;sortOrder=descending</code>. Parse XML using <code>xml.etree.ElementTree</code>. Extract title, abstract summary, published date, PDF link, and authors.
+    </li>
+    <li><strong>RSS Module (<code>rss.py</code>):</strong>
+      Maintain a static list of 20 verified high-signal RSS URLs (e.g. Stratechery, SemiAnalysis, Latent Space, Pragmatic Engineer, Simon Willison). Use <code>feedparser.parse(url)</code> with an HTTP <code>ETag</code> / <code>If-Modified-Since</code> cache header. Extract articles published in the last 36 hours.
+    </li>
+  </ul>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>pytest backend/tests/test_ingestion_sources.py -v</pre>
+  <p><em>Expected: 4 tests passed, &gt;60 unique RawArticle items returned across all 4 modules.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 17 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 17: Database Schema Migration &amp; pgvector Integration</span>
+    <span class="badge badge-purple">Database</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Enable the PostgreSQL <code>vector</code> extension on the database, add vector columns for 384-dimensional sentence embeddings, and create relational schemas for B2B Teams and Multi-Channel delivery preferences.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>pgvector==0.3.6</code>.</li>
+    <li><code>[MODIFY] backend/db.py</code> — Ensure engine registers pgvector and extension is created on startup.</li>
+    <li><code>[MODIFY] backend/models.py</code> — Update <code>NewsCluster</code>, <code>UserPreference</code>, <code>SuperSummary</code>; add <code>Team</code>, <code>TeamMembership</code>, <code>SlackInstallation</code>, <code>UserEmailPreference</code>.</li>
+    <li><code>[NEW] backend/alembic/versions/0002_add_pgvector_and_b2b_models.py</code> — Alembic migration script.</li>
+    <li><code>[NEW] backend/tests/test_database_vector.py</code> — Test script verifying cosine vector search.</li>
+  </ul>
+
+  <div class="cp-section-title">Exact ORM Model Specifications (backend/models.py)</div>
+  <pre>
+from pgvector.sqlalchemy import Vector
+
+# Alterations to existing tables:
+class NewsCluster(Base):
+    # Existing columns ...
+    embedding = Column(Vector(384), nullable=True) # Normalized centroid embedding
+    category = Column(String, default="General Tech", nullable=False)
+
+class UserPreference(Base):
+    # Existing columns ...
+    preference_embedding = Column(Vector(384), nullable=True) # Normalized user profile vector
+
+class SuperSummary(Base):
+    # Existing columns ...
+    audio_url = Column(String, nullable=True)
+    audio_duration_seconds = Column(Integer, nullable=True)
+
+# New B2B & Delivery Tables:
+class Team(Base):
+    __tablename__ = "teams"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    subscription_status = Column(String, default="active") # 'active', 'past_due', 'canceled'
+    max_seats = Column(Integer, default=15)
+    billing_email = Column(String, nullable=True)
+
+class TeamMembership(Base):
+    __tablename__ = "team_memberships"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, default="member") # 'admin', 'member'
+
+class SlackInstallation(Base):
+    __tablename__ = "slack_installations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=True)
+    slack_team_id = Column(String, unique=True, nullable=False)
+    slack_team_name = Column(String, nullable=False)
+    bot_token = Column(String, nullable=False)
+    target_channel_id = Column(String, nullable=False)
+    delivery_time_utc = Column(String, default="13:00") # 9:00 AM EST default
+    is_active = Column(Boolean, default=True)
+
+class UserEmailPreference(Base):
+    __tablename__ = "user_email_preferences"
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    email_digest_enabled = Column(Boolean, default=True, nullable=False)
+    delivery_hour_utc = Column(Integer, default=11, nullable=False) # 7:00 AM EST default
+    last_sent_at = Column(DateTime(timezone=True), nullable=True)
+</pre>
+
+  <div class="cp-section-title">Alembic Migration &amp; Verification Instructions</div>
+  <pre>
+# In PostgreSQL terminal or migration script:
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE INDEX IF NOT EXISTS ix_news_clusters_embedding ON news_clusters USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
+</pre>
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_database_vector.py -v</pre>
+  <p><em>Expected: Connection connects, vectors inserted, and <code>SELECT ... ORDER BY embedding <=> '[...]' LIMIT 5</code> succeeds.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 18 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 18: Stage 1 Global World-State Pipeline</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Build the standalone, user-independent Stage 1 pipeline script. Ingests all sources, deduplicates, clusters, generates centroid embeddings, and pre-generates base Cards and Deep Dives once into the database.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[NEW] backend/pipeline_stage1.py</code> — Main orchestrator for Stage 1 batch.</li>
+    <li><code>[MODIFY] backend/clustering.py</code> — Add centroid embedding computation (mean pooling + normalization).</li>
+    <li><code>[MODIFY] backend/generation.py</code> — Add batch card generation and priority Deep Dive generation.</li>
+    <li><code>[NEW] backend/tests/test_pipeline_stage1.py</code> — End-to-end stage 1 test with mock sources.</li>
+  </ul>
+
+  <div class="cp-section-title">Step-by-Step Execution Flow</div>
+  <ol>
+    <li><strong>Aggregation:</strong> Concurrently call <code>fetch_hacker_news()</code>, <code>fetch_github_trending()</code>, <code>fetch_arxiv_papers()</code>, <code>fetch_rss_feeds()</code>. Combine into <code>List[RawArticle]</code> (~400–600 items).</li>
+    <li><strong>Deduplication:</strong> Embed <code>f"{art.title}. {art.content[:400]}"</code> via <code>sentence-transformers</code> (<code>all-MiniLM-L6-v2</code>). Compute cosine distance matrix. Retain only articles with similarity &lt; 0.82 to any higher-ranked article.</li>
+    <li><strong>Clustering:</strong> Pass surviving article titles + snippets to Groq (<code>qwen/qwen3.8-27b</code>). Prompt outputs 40–70 clusters with canonical titles, matched tags, and article index mappings.</li>
+    <li><strong>Centroid Embedding Calculation:</strong>
+      <pre>
+def compute_centroid(article_embeddings: np.ndarray) -> List[float]:
+    centroid = np.mean(article_embeddings, axis=0)
+    norm = np.linalg.norm(centroid)
+    if norm > 0:
+        centroid = centroid / norm
+    return centroid.tolist()
+</pre>
+    </li>
+    <li><strong>Pre-generation:</strong>
+      <ul>
+        <li>For each cluster, generate base <code>Card</code> for <code>high_signal</code> and <code>technical_deep</code> tone.</li>
+        <li>Select the top 10 clusters (ranked by source count + score) and pre-generate the structured 4-section <code>DeepDive</code> markdown.</li>
+      </ul>
+    </li>
+    <li><strong>Database Upsert:</strong> Save all <code>NewsCluster</code>, <code>Card</code>, and <code>DeepDive</code> records linked to <code>batch_date = today</code> in a single transaction.</li>
+  </ol>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_pipeline_stage1.py -v</pre>
+  <p><em>Expected: Pipeline generates 40-70 clusters with non-null embeddings and base cards in test DB.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 19 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 19: Stage 2 User Matching &amp; Personalization Engine</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Build the fast Stage 2 personalization engine. Matches each user's preference vector against the day's pre-computed clusters using pgvector, generates a custom Super Summary, and creates the <code>UserBriefing</code>.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[NEW] backend/pipeline_stage2.py</code> — High-speed personalization worker.</li>
+    <li><code>[MODIFY] backend/main.py</code> — Add <code>POST /admin/trigger-stage2</code> and optimize <code>GET /briefing/today</code>.</li>
+    <li><code>[NEW] backend/tests/test_pipeline_stage2.py</code> — Benchmark test for user matching speed (&lt;1.5s/user).</li>
+  </ul>
+
+  <div class="cp-section-title">Matching Query &amp; Personalization Logic</div>
+  <pre>
+# In backend/pipeline_stage2.py:
+def match_clusters_for_user(db: Session, user_id: UUID, limit: int = 6) -> List[models.NewsCluster]:
+    pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == user_id).first()
+    
+    # If user has no embedding, compute and save it once
+    if pref.preference_embedding is None:
+        text = f"{pref.raw_paragraph} {' '.join(pref.thematic_tags or [])} {' '.join(pref.search_queries or [])}"
+        pref.preference_embedding = get_embedder().encode(text).tolist()
+        db.commit()
+        
+    today = datetime.now(timezone.utc).date()
+    # High-speed pgvector cosine distance query
+    matched_clusters = db.query(models.NewsCluster).filter(
+        models.NewsCluster.batch_date == today
+    ).order_by(
+        models.NewsCluster.embedding.cosine_distance(pref.preference_embedding)
+    ).limit(limit).all()
+    
+    return matched_clusters
+</pre>
+
+  <div class="cp-section-title">Super Summary Synthesis Prompt (Groq Qwen)</div>
+  <p>
+    Synthesize the 6 matched cluster titles into a punchy, 4–6 sentence narrative strictly adhering to the user's <code>tone_bucket</code> (e.g. <code>technical_deep</code> or <code>executive_brief</code>).
+  </p>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_pipeline_stage2.py -v</pre>
+  <p><em>Expected: 10 mock users with distinct tags (e.g. 'Kubernetes' vs 'Biotech') match distinct clusters in &lt;1.2s each.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 20 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 20: Daily Email Digest Service (Resend Integration)</span>
+    <span class="badge badge-green">Multi-Channel</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Implement high-converting, responsive daily HTML email delivery via Resend API, establishing email as the primary retention vehicle.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>resend==2.6.0</code>.</li>
+    <li><code>[NEW] backend/services/__init__.py</code></li>
+    <li><code>[NEW] backend/services/email_service.py</code> — Resend email dispatcher.</li>
+    <li><code>[NEW] backend/templates/email_digest.html</code> — Responsive HTML email template with dark-slate styling.</li>
+    <li><code>[MODIFY] backend/main.py</code> — Add <code>GET /users/me/email-preferences</code> and <code>PUT /users/me/email-preferences</code>.</li>
+    <li><code>[NEW] backend/tests/test_email_service.py</code> — Unit tests with mocked Resend API.</li>
+  </ul>
+
+  <div class="cp-section-title">Email Architecture &amp; Configuration</div>
+  <ul>
+    <li><strong>Environment Variables:</strong> <code>RESEND_API_KEY=re_...</code>, <code>FROM_EMAIL=briefing@newsbrief.ai</code>.</li>
+    <li><strong>Template Layout:</strong>
+      <ul>
+        <li>Header: NewsBrief Logo, Date, User Name.</li>
+        <li>Section 1: <em>Executive Super Summary</em> narrative block.</li>
+        <li>Section 2: <em>Top 3 Cards</em> (Headline, source publication pill, 3 bullets).</li>
+        <li>Section 3: Call-to-action buttons: <em>"Read Deep Dive"</em> and <em>"Listen to 3-min Audio"</em>.</li>
+        <li>Footer: 1-click unsubscribe and delivery time settings link.</li>
+      </ul>
+    </li>
+    <li><strong>Batching:</strong> Use asyncio semaphore (max 10 concurrent requests) to comply with Resend rate limits.</li>
+  </ul>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_email_service.py -v</pre>
+  <p><em>Expected: HTML renders with valid tags, mock Resend API records successful email dispatch.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 21 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 21: Daily Audio Briefing Engine (OpenAI TTS)</span>
+    <span class="badge badge-green">Multi-Channel</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Generate an automated 2–3 minute podcast-style audio briefing every morning using OpenAI TTS, saving to local storage / Supabase bucket and exposing a streamable endpoint.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>openai==1.65.0</code>.</li>
+    <li><code>[NEW] backend/services/audio_service.py</code> — Audio generation and storage manager.</li>
+    <li><code>[MODIFY] backend/main.py</code> — Expose endpoint <code>GET /briefing/today/audio</code>.</li>
+    <li><code>[NEW] backend/tests/test_audio_service.py</code> — Test script verifying audio generation.</li>
+  </ul>
+
+  <div class="cp-section-title">Audio Pipeline Specifications</div>
+  <ul>
+    <li><strong>Script Generation:</strong> Groq LLM converts the Super Summary + top 3 headlines into a natural radio broadcast script (280–350 words, tone: professional news anchor). Example opening: <em>"Good morning. Here is your NewsBrief intelligence report for [Day]..."</em>.</li>
+    <li><strong>TTS Synthesis:</strong>
+      <pre>
+response = openai_client.audio.speech.create(
+    model="tts-1",
+    voice="onyx", # Deep, executive radio voice
+    input=broadcast_script,
+    response_format="mp3"
+)
+</pre>
+    </li>
+    <li><strong>Storage:</strong> Save MP3 to local folder <code>backend/static/audio/{batch_date}/{summary_id}.mp3</code> or Supabase Storage. Populate <code>super_summaries.audio_url</code>.</li>
+  </ul>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_audio_service.py -v</pre>
+  <p><em>Expected: Generates valid MP3 file &gt;100KB with playable duration between 120s and 180s.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 22 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 22: Team Slack Bot &amp; Workspace Integration</span>
+    <span class="badge badge-amber">B2B SaaS</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Build the Slack Bot integration for teams ($99–$199/mo). Allows teams to connect a Slack channel and receive automated, beautifully formatted morning Block Kit briefings.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>slack-sdk==3.34.0</code>, <code>slack-bolt==1.22.0</code>.</li>
+    <li><code>[NEW] backend/services/slack_service.py</code> — Slack Block Kit builder and webhook poster.</li>
+    <li><code>[NEW] backend/routers/slack_router.py</code> — OAuth installation routes (<code>/slack/install</code>, <code>/slack/oauth_callback</code>).</li>
+    <li><code>[MODIFY] backend/main.py</code> — Mount <code>slack_router</code>.</li>
+    <li><code>[NEW] backend/tests/test_slack_service.py</code> — Unit test for Slack Block Kit payload generation.</li>
+  </ul>
+
+  <div class="cp-section-title">Slack Block Kit Structure</div>
+  <pre>
+{
+  "blocks": [
+    { "type": "header", "text": { "type": "plain_text", "text": "⚡ NewsBrief Daily Market Radar" } },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*Super Summary:*
+" + summary_text } },
+    { "type": "divider" },
+    { "type": "section", "text": { "type": "mrkdwn", "text": "*1. " + card1.headline + "*
+• " + card1.bullet1 } },
+    { "type": "actions", "elements": [
+        { "type": "button", "text": { "type": "plain_text", "text": "Read Deep Dive" }, "url": web_url, "style": "primary" }
+    ]}
+  ]
+}
+</pre>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_slack_service.py -v</pre>
+  <p><em>Expected: Block Kit generator passes Slack schema validation and mock WebClient executes chat.postMessage.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 23 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 23: Frontend Modernization &amp; Audio Player</span>
+    <span class="badge badge-purple">Mobile / Expo</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Update the React Native / Expo application to include an audio playback widget on the home screen, an email digest preference switch, and an overhauled 4-tier paywall with a 1-click "Expense to Company" receipt generator.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] frontend/package.json</code> — Add <code>expo-av@~15.0.2</code>.</li>
+    <li><code>[NEW] frontend/src/components/AudioPlayer.tsx</code> — Play/Pause audio bar with progress indicator.</li>
+    <li><code>[MODIFY] frontend/src/screens/HomeScreen.tsx</code> — Embed <code>AudioPlayer</code> component above the Super Summary card.</li>
+    <li><code>[MODIFY] frontend/src/screens/PaywallScreen.tsx</code> — Replace single $4.99 card with 4-tier selection: Free ($0), Pro ($9.99), Executive ($24.99), Team ($99). Add "Expense to Employer" modal.</li>
+    <li><code>[NEW] frontend/src/components/ExpenseModal.tsx</code> — Modal rendering formal PDF/text invoice for employer expensing.</li>
+    <li><code>[MODIFY] frontend/src/types.ts</code> — Add <code>audio_url</code> to <code>BriefingResponse</code> and subscription tier enums.</li>
+  </ul>
+
+  <div class="cp-section-title">Paywall Pricing Ladder &amp; UI Logic</div>
+  <pre>
+export const TIERS = [
+  { id: 'pro', name: 'Pro', price: '$9.99/mo', desc: 'Unlimited Cards + 2 Deep Dives/day + Daily Audio' },
+  { id: 'executive', name: 'Executive', price: '$24.99/mo', desc: 'Unlimited Deep Dives + Read as One + Priority arXiv' },
+  { id: 'team', name: 'Team / Slack', price: '$99/mo', desc: 'Up to 15 seats + Daily Automated Slack Bot Drop' }
+];
+</pre>
+
+  <div class="cp-section-title">Verification Steps</div>
+  <ul>
+    <li>Run <code>npm test</code> or launch Expo: verify <code>AudioPlayer</code> mounts without crashes when <code>audio_url</code> is present.</li>
+    <li>Click "Expense to Employer" in <code>PaywallScreen</code>: verify formatted reimbursement receipt displays correctly.</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 24 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 24: Distributed Task Queue (Redis + Arq)</span>
+    <span class="badge badge-blue">Infrastructure</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Replace in-process APScheduler with a production-grade Redis + <code>arq</code> distributed task queue. Manages nightly Stage 1 runs and fans out Stage 2 deliveries by user timezone without blocking the API.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>arq==0.26.1</code>, <code>redis==5.2.1</code>.</li>
+    <li><code>[NEW] backend/worker.py</code> — Arq worker definitions, task handlers, and cron schedules.</li>
+    <li><code>[MODIFY] backend/main.py</code> — Remove in-memory APScheduler; connect to Redis connection pool.</li>
+    <li><code>[NEW] docker-compose.yml</code> — Docker compose file orchestrating FastAPI app, Redis server, and Arq worker.</li>
+    <li><code>[NEW] backend/tests/test_worker_tasks.py</code> — Task execution tests.</li>
+  </ul>
+
+  <div class="cp-section-title">Worker Task Hierarchy (backend/worker.py)</div>
+  <pre>
+class WorkerSettings:
+    functions = [
+        run_stage1_pipeline_task,
+        dispatch_user_delivery_task,
+        send_email_digest_task,
+        post_slack_briefing_task
+    ]
+    cron_jobs = [
+        # Run Stage 1 globally at 03:00 UTC
+        cron(run_stage1_pipeline_task, hour=3, minute=0),
+        # Trigger Stage 2 deliveries hourly based on timezone
+        cron(dispatch_hourly_deliveries_task, minute=0)
+    ]
+    redis_settings = RedisSettings.from_dsn(os.environ.get("REDIS_URL", "redis://localhost:6379"))
+</pre>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_worker_tasks.py -v</pre>
+  <p><em>Expected: Tasks enqueue to Redis, execute, and record completion status.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- CHECKPOINT 25 -->
+<div class="cp-box">
+  <div class="cp-header">
+    <span>Checkpoint 25: Admin Dashboard 2.0 &amp; Telemetry</span>
+    <span class="badge badge-blue">Admin &amp; Ops</span>
+  </div>
+
+  <div class="cp-section-title">Objective &amp; Scope</div>
+  <p>
+    Overhaul <code>admin.html</code> into a full operational command center displaying source health badges, daily LLM token costs, multi-channel delivery funnels, and manual trigger controls.
+  </p>
+
+  <div class="cp-section-title">Files to Create / Modify</div>
+  <ul>
+    <li><code>[MODIFY] backend/admin.html</code> — Revamped single-page UI with Tailwind CSS CDN and live telemetry charts.</li>
+    <li><code>[MODIFY] backend/main.py</code> — Expand <code>GET /admin/stats</code> to return source ingestion metrics, API cost estimates, and multi-channel counts.</li>
+    <li><code>[NEW] backend/tests/test_admin_endpoints.py</code> — Verification of admin stats and pipeline triggers.</li>
+  </ul>
+
+  <div class="cp-section-title">Admin Telemetry Data Contract (GET /admin/stats)</div>
+  <pre>
+{
+  "sources_health": {
+    "hacker_news": { "status": "healthy", "articles_today": 28, "last_ingest": "2026-09-17T03:05:00Z" },
+    "github_trending": { "status": "healthy", "articles_today": 15, "last_ingest": "2026-09-17T03:06:00Z" },
+    "arxiv_papers": { "status": "healthy", "articles_today": 25, "last_ingest": "2026-09-17T03:07:00Z" },
+    "rss_feeds": { "status": "healthy", "articles_today": 42, "last_ingest": "2026-09-17T03:08:00Z" }
+  },
+  "today_metrics": {
+    "total_raw_articles": 110,
+    "clusters_formed": 48,
+    "deep_dives_generated": 10,
+    "emails_dispatched": 340,
+    "audio_briefings_streamed": 182,
+    "slack_drops_successful": 24
+  },
+  "estimated_cost_today_usd": 0.42, # Groq + TTS + Resend
+  "active_subscriptions": { "free": 450, "pro": 62, "executive": 18, "team": 8 }
+}
+</pre>
+
+  <div class="cp-section-title">Verification Command</div>
+  <pre>python3 -m pytest backend/tests/test_admin_endpoints.py -v</pre>
+  <p><em>Expected: <code>GET /admin/stats</code> returns full telemetry object with 200 OK.</em></p>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 3: SUMMARY CHECKLIST -->
+<h2>3. Complete Master Verification Checklist</h2>
+<table>
+  <thead>
+    <tr>
+      <th>CP</th>
+      <th>Module</th>
+      <th>Primary Deliverable</th>
+      <th>Verification Command</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>CP-16</strong></td>
+      <td>Ingestion</td>
+      <td>HN, GitHub, arXiv, RSS scrapers in <code>backend/ingestion_sources/</code></td>
+      <td><code>pytest backend/tests/test_ingestion_sources.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-17</strong></td>
+      <td>Database</td>
+      <td>PostgreSQL <code>pgvector</code>, <code>Team</code>, <code>SlackInstallation</code> tables</td>
+      <td><code>pytest backend/tests/test_database_vector.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-18</strong></td>
+      <td>Pipeline 1</td>
+      <td>Stage 1 global pool clustering &amp; pre-generation in <code>pipeline_stage1.py</code></td>
+      <td><code>pytest backend/tests/test_pipeline_stage1.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-19</strong></td>
+      <td>Pipeline 2</td>
+      <td>Stage 2 pgvector cosine matching in <code>pipeline_stage2.py</code> (&lt;1.5s/user)</td>
+      <td><code>pytest backend/tests/test_pipeline_stage2.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-20</strong></td>
+      <td>Email</td>
+      <td>Resend API integration with responsive HTML digest template</td>
+      <td><code>pytest backend/tests/test_email_service.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-21</strong></td>
+      <td>Audio</td>
+      <td>OpenAI TTS 2–3 min daily radio podcast generator</td>
+      <td><code>pytest backend/tests/test_audio_service.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-22</strong></td>
+      <td>Slack</td>
+      <td>Slack Bolt OAuth &amp; Block Kit morning briefing in <code>#market-intel</code></td>
+      <td><code>pytest backend/tests/test_slack_service.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-23</strong></td>
+      <td>Mobile UI</td>
+      <td><code>AudioPlayer.tsx</code> on Home + 4-Tier Paywall &amp; Employer Receipt Modal</td>
+      <td><code>npm test (frontend)</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-24</strong></td>
+      <td>Queue</td>
+      <td>Redis + <code>arq</code> worker pool &amp; timezone-aware scheduler</td>
+      <td><code>pytest backend/tests/test_worker_tasks.py</code></td>
+    </tr>
+    <tr>
+      <td><strong>CP-25</strong></td>
+      <td>Admin</td>
+      <td>Admin Dashboard 2.0 with source health and API token spend tracker</td>
+      <td><code>pytest backend/tests/test_admin_endpoints.py</code></td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>

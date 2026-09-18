@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NewsBrief Redesign Project Report & Execution Blueprint</title>
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 14mm 18mm 14mm;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #1E293B;
+    line-height: 1.55;
+    font-size: 10.5pt;
+    margin: 0;
+    padding: 0;
+  }
+  .page-break {
+    page-break-before: always;
+  }
+  .cover {
+    min-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 40px 24px;
+    box-sizing: border-box;
+    border-left: 8px solid #2563EB;
+  }
+  .cover h1 {
+    font-size: 32pt;
+    font-weight: 800;
+    color: #0F172A;
+    margin: 0 0 12px 0;
+    line-height: 1.15;
+  }
+  .cover .subtitle {
+    font-size: 15pt;
+    color: #2563EB;
+    font-weight: 600;
+    margin-bottom: 24px;
+    letter-spacing: 0.5px;
+  }
+  .cover .tagline {
+    font-size: 12.5pt;
+    color: #475569;
+    max-width: 600px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+  .cover .meta {
+    font-size: 9.5pt;
+    color: #64748B;
+    border-top: 1px solid #E2E8F0;
+    padding-top: 20px;
+  }
+  .cover .meta p {
+    margin: 4px 0;
+  }
+  
+  h2 {
+    color: #0F172A;
+    font-size: 17pt;
+    border-bottom: 2px solid #E2E8F0;
+    padding-bottom: 6px;
+    margin-top: 26px;
+    margin-bottom: 12px;
+  }
+  h3 {
+    color: #1E293B;
+    font-size: 12.5pt;
+    margin-top: 18px;
+    margin-bottom: 8px;
+  }
+  p {
+    margin: 0 0 10px 0;
+  }
+  ul, ol {
+    margin: 0 0 14px 0;
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 5px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 14px 0 20px 0;
+    font-size: 9pt;
+  }
+  th, td {
+    border: 1px solid #CBD5E1;
+    padding: 7px 9px;
+    text-align: left;
+  }
+  th {
+    background-color: #F1F5F9;
+    color: #0F172A;
+    font-weight: 700;
+  }
+  tr:nth-child(even) {
+    background-color: #F8FAFC;
+  }
+  .callout {
+    background-color: #EFF6FF;
+    border-left: 4px solid #2563EB;
+    padding: 10px 14px;
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    font-size: 9.5pt;
+  }
+  .callout-warning {
+    background-color: #FFFBEB;
+    border-left: 4px solid #F59E0B;
+    color: #92400E;
+  }
+  .callout-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .badge-blue { background: #DBEAFE; color: #1D4ED8; }
+  .badge-green { background: #DCFCE7; color: #15803D; }
+  .badge-amber { background: #FEF3C7; color: #B45309; }
+  .badge-purple { background: #F3E8FF; color: #7E22CE; }
+  
+  .diagram-box {
+    background: #0F172A;
+    color: #F8FAFC;
+    padding: 12px;
+    border-radius: 6px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 7.5pt;
+    line-height: 1.35;
+    white-space: pre;
+    overflow-x: auto;
+    margin: 12px 0;
+  }
+  
+  .checkpoint-card {
+    border: 1px solid #CBD5E1;
+    border-radius: 6px;
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    background: #FFFFFF;
+    page-break-inside: avoid;
+  }
+  .checkpoint-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 700;
+    color: #0F172A;
+    margin-bottom: 5px;
+    font-size: 10pt;
+    border-bottom: 1px solid #F1F5F9;
+    padding-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER PAGE -->
+<div class="cover">
+  <div class="subtitle">ARCHITECTURAL SPECIFICATION &amp; REFACTORING BLUEPRINT</div>
+  <h1>NewsBrief: Redesign Project Report</h1>
+  <div class="tagline">
+    Transitioning from a consumer news reader into an Autonomous Market &amp; Competitor Intelligence Engine for tech leaders, founders, and product teams.
+  </div>
+  <div class="meta">
+    <p><strong>Prepared for:</strong> StartupX Engineering &amp; Google Antigravity IDE</p>
+    <p><strong>Version:</strong> 2.5 (Post-Market Validation &amp; Architecture Overhaul)</p>
+    <p><strong>Status:</strong> Ready for Checkpoint-by-Checkpoint Execution</p>
+    <p><strong>Date:</strong> September 2026</p>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 1: EXECUTIVE SUMMARY & STRATEGIC PIVOT -->
+<h2>1. Executive Summary &amp; Strategic Pivot</h2>
+
+<p>
+The initial design of NewsBrief was conceived as a consumer-oriented AI news briefing mobile app, monetized via $4.99/month in-app subscriptions. However, market benchmarking and post-mortem analyses of high-profile failures (most notably <em>Artifact</em> by Instagram founders, which shut down and was acquired by Yahoo due to consumer news churn) reveal that <strong>standalone consumer news reading is a venture graveyard</strong>.
+</p>
+
+<div class="callout callout-warning">
+  <div class="callout-title">Market Reality Check</div>
+  General news reading suffers from zero willingness-to-pay, high churn, and fierce competition from free alternatives (Twitter/X, Reddit, Perplexity, free email newsletters like TLDR). Selling a $4.99/mo consumer news reader is an uphill battle.
+</div>
+
+<p>
+<strong>The Strategic Pivot:</strong> Rather than competing for personal recreation time, NewsBrief pivots to <strong>Autonomous Market &amp; Competitor Intelligence</strong> for knowledge professionals (Founders, AI Engineers, Product Managers, and Investors). These users do not want "news"; they want <strong>strategic signal</strong> to ensure they are never blindsided in a board meeting, sprint planning, or investor update.
+</p>
+
+<h3>Core Pillars of the Redesign:</h3>
+<ul>
+  <li><strong>From Consumer to Prosumer / B2B:</strong> Re-position from casual reading to an indispensable work tool expensable on corporate software/learning budgets.</li>
+  <li><strong>From Single Source to High-Signal Multi-Source:</strong> Escape Google News SEO spam by integrating Hacker News, GitHub Trending, arXiv preprints, and curated Substack RSS feeds alongside neural search (Exa.ai).</li>
+  <li><strong>From Single Mobile App to Omnichannel Delivery:</strong> Deliver value where users actually work—7:00 AM Email Digest (primary retention anchor), 3-minute AI Audio Briefing (commute/gym), Slack Bot (team virality), and the Mobile App (lean-back deep dive reader).</li>
+  <li><strong>From O(N) Redundant Scraping to Global Two-Stage Clustering:</strong> Separate global daily ingestion from user delivery to reduce LLM and scraping costs by over 90%.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- SECTION 2: TARGET AUDIENCE & MONETIZATION MODEL -->
+<h2>2. Target Audience, Personas &amp; Monetization</h2>
+
+<h3>2.1 Ideal Customer Profiles (ICPs)</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Persona</th>
+      <th>Key Pain Point</th>
+      <th>Primary Value Driver</th>
+      <th>Willingness to Pay</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Tech / AI Founder &amp; CTO</strong></td>
+      <td>Doomscrolling X/Reddit for 2 hours daily to track AI model releases, API updates, and competitors.</td>
+      <td>Never get caught off-guard on tech shifts; saves 10+ hours per week.</td>
+      <td>High (Expensed to company credit card: $24.99–$99/mo).</td>
+    </tr>
+    <tr>
+      <td><strong>Product Manager / Strategy Lead</strong></td>
+      <td>Manual competitor tracking before roadmap prioritization and sprint planning.</td>
+      <td>Automated weekly/daily competitive intelligence briefs with "Actionable Takeaways".</td>
+      <td>Medium-High (Expensed under tool stipend).</td>
+    </tr>
+    <tr>
+      <td><strong>VC Associate / Angel Investor</strong></td>
+      <td>Sifting noise to find breakout open-source projects, team spinouts, and seed rounds.</td>
+      <td>GitHub star velocity, arXiv breakthrough signals, and early market momentum.</td>
+      <td>Very High (Corporate expense).</td>
+    </tr>
+    <tr>
+      <td><strong>Engineering Team (5–20 devs)</strong></td>
+      <td>Siloed information; engineers unaware of changes in dependent libraries or competitor products.</td>
+      <td>Automated 9:00 AM morning brief in team Slack channel (<code>#market-intel</code>).</td>
+      <td>Extreme (Team B2B SaaS budget: $99–$199/mo).</td>
+    </tr>
+  </tbody>
+</table>
+
+<h3>2.2 The 4-Tier Monetization Matrix</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Tier</th>
+      <th>Price</th>
+      <th>Target User</th>
+      <th>Features &amp; Limits</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="badge badge-blue">Free</span></td>
+      <td>$0 / month</td>
+      <td>Top-of-funnel / Viral Acquisition</td>
+      <td>Daily Super Summary via Email + 5 Cards/day on Mobile App. Branded "Powered by NewsBrief".</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-green">Pro</span></td>
+      <td>$9.99 / mo<br><small>($99 / yr)</small></td>
+      <td>Individual Developers &amp; Power Users</td>
+      <td>Unlimited Cards, 2 Deep Dives/day, custom topic search queries, daily 3-minute Audio Briefing, full mobile access.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-purple">Executive</span></td>
+      <td>$24.99 / mo<br><small>($240 / yr)</small></td>
+      <td>Founders, Leads, Investors (Expensed)</td>
+      <td>Unlimited Deep Dives, "Read as One" consolidated executive reports, 1-Click PDF/Markdown export, Priority ArXiv/HN feeds.</td>
+    </tr>
+    <tr>
+      <td><span class="badge badge-amber">Team / Slack</span></td>
+      <td>$99 – $199 / mo<br><small>(Up to 20 seats)</small></td>
+      <td>Startups, Product Teams, Agencies</td>
+      <td>Automated Daily Slack/Teams Bot Drop, Shared team topic radar, Team admin portal, Centralized invoicing.</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="callout">
+  <div class="callout-title">The "Expense This" Growth Hack</div>
+  Add a dedicated "Expense to Employer" button on checkout that generates a pre-formatted corporate PDF receipt titled: <em>"Subscription: Industry Research &amp; Technical Intelligence Radar for [Company Name]"</em> with a pre-written approval email for managers.
+</div>
+
+<div class="page-break"></div>
+
+<!-- SECTION 3: ARCHITECTURE & WORKFLOW OVERHAUL -->
+<h2>3. Architecture &amp; Workflow Overhaul</h2>
+
+<h3>3.1 Current Flaws vs. New Architecture</h3>
+<p>
+The existing pipeline in <code>backend/run_pipeline.py</code> is tightly coupled per user. If 500 users monitor "AI", the backend executes 3,000 Serper searches and 9,000 Jina scrapes, repeating identical LLM clustering operations.
+</p>
+
+<p><strong>The Solution: Two-Stage Decoupled Pipeline</strong></p>
+
+<div class="diagram-box">
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ STAGE 1: GLOBAL WORLD-STATE INGESTION & CLUSTERING (Nightly at 03:00 UTC)              │
+│                                                                                        │
+│   [HackerNews API]    [GitHub Trending]    [arXiv Preprints]    [Curated RSS/Substack] │
+│          │                   │                     │                     │             │
+│          └───────────────────┴──────────┬──────────┴─────────────────────┘             │
+│                                         ▼                                              │
+│                        Raw Article Pool (500–1000 items)                               │
+│                                         │                                              │
+│                                         ▼                                              │
+│               Deduplication & Local Embeddings (all-MiniLM-L6-v2)                      │
+│                                         │                                              │
+│                                         ▼                                              │
+│               Groq / Qwen Clustering → 50–80 Canonical NewsClusters                    │
+│                                         │                                              │
+│                                         ▼                                              │
+│               Pre-generate Base Cards & Core Deep Dives (Saved to DB)                  │
+└─────────────────────────────────────────┬──────────────────────────────────────────────┘
+                                          │
+                                          ▼
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│ STAGE 2: PERSONALIZED DELIVERY & MULTI-CHANNEL DISPATCH (Morning 06:30 Local)         │
+│                                                                                        │
+│                 User Preference Vector (pgvector cosine similarity)                    │
+│                                         │                                              │
+│                                         ▼                                              │
+│                     Select Top 5–7 Clusters for Specific User                          │
+│                                         │                                              │
+│                                         ▼                                              │
+│                     Synthesize Custom Tone Super Summary (Groq)                        │
+│                                         │                                              │
+│                                         ▼                                              │
+│                     Generate 3-Minute TTS Audio (OpenAI / ElevenLabs)                  │
+│                                         │                                              │
+│         ┌───────────────────┬───────────┴───────────┬───────────────────┐              │
+│         ▼                   ▼                       ▼                   ▼              │
+│   [Email Digest]      [Mobile App]            [Audio Brief]       [Slack Bot]          │
+│   (Resend API)       (Push + Cards)           (Audio Stream)     (Team Channel)        │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+</div>
+
+<h3>3.2 Data Ingestion Matrix</h3>
+<ul>
+  <li><strong>Hacker News (Firebase API - Free):</strong> Top 30 stories extracted via official API. Yields human-filtered developer announcements and technical discussions.</li>
+  <li><strong>GitHub API (Trending &amp; Releases - Free):</strong> Tracks repo star spikes and release changelogs for key open-source packages.</li>
+  <li><strong>arXiv &amp; Hugging Face Daily Papers (Free):</strong> Captures AI/ML paper abstracts directly into the raw pool without web scraping.</li>
+  <li><strong>Substack &amp; Tech RSS (Free):</strong> Ingests 50+ curated high-signal industry feeds via Python feedparser.</li>
+  <li><strong>Exa.ai / Serper (Neural / Web Search):</strong> Targeted semantic search queries for breaking news not captured by curated feeds.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- SECTION 4: STEP-BY-STEP CHECKPOINTS FOR GOOGLE ANTIGRAVITY IDE -->
+<h2>4. Actionable Checkpoints for Google Antigravity IDE</h2>
+
+<p>
+The following checkpoints extend the initial 15 checkpoints in <code>progress.md</code>. They are strictly sequential and designed to allow Google Antigravity IDE to execute, refactor, and verify the codebase step-by-step.
+</p>
+
+<!-- Checkpoint 16 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 16: Multi-Source Ingestion Engine</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+  <p><strong>Goal:</strong> Broaden data ingestion beyond Serper to include developer, research, and thought leadership streams.</p>
+  <ul>
+    <li>Create <code>backend/ingestion_sources/</code> module:
+      <ul>
+        <li><code>hn.py</code>: Connect to Hacker News Firebase API (<code>https://hacker-news.firebaseio.com/v0/topstories.json</code>) and fetch top 30 stories.</li>
+        <li><code>github.py</code>: Query GitHub REST API for trending tech repos and major release tags.</li>
+        <li><code>arxiv.py</code>: Query arXiv API for latest AI/ML/CS papers.</li>
+        <li><code>rss.py</code>: Parse high-signal Substack feeds using <code>feedparser</code>.</li>
+      </ul>
+    </li>
+    <li>Unify output format: All sources map into standard <code>RawArticle(title, url, source, content, published_at, tags)</code> schema.</li>
+    <li><strong>Verification:</strong> Unit tests in <code>tests/test_ingestion_sources.py</code> confirming data extraction from all 4 providers.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 17 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 17: Database Schema Migration &amp; pgvector Integration</span>
+    <span class="badge badge-purple">Database</span>
+  </div>
+  <p><strong>Goal:</strong> Equip PostgreSQL with vector capabilities and support team / multichannel delivery.</p>
+  <ul>
+    <li>Enable PostgreSQL <code>vector</code> extension in Supabase / Alembic migration.</li>
+    <li>Update <code>models.py</code>:
+      <ul>
+        <li>Add <code>embedding</code> (Vector(384)) column to <code>NewsCluster</code>.</li>
+        <li>Add <code>preference_embedding</code> (Vector(384)) to <code>UserPreference</code>.</li>
+        <li>Create <code>Team</code>, <code>TeamMembership</code>, and <code>SlackInstallation</code> tables.</li>
+        <li>Add <code>audio_url</code> to <code>SuperSummary</code>.</li>
+      </ul>
+    </li>
+    <li>Generate and apply Alembic migration scripts.</li>
+    <li><strong>Verification:</strong> Script <code>test_vector_db.py</code> verifying vector insertion and cosine similarity queries (<code>&lt;=&gt;</code>).</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 18 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 18: Stage 1 Global Clustering Pipeline</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+  <p><strong>Goal:</strong> Transform ingestion from per-user to a single shared daily world-state pool.</p>
+  <ul>
+    <li>Implement <code>backend/pipeline_stage1.py</code>:
+      <ul>
+        <li>Run all ingestion modules and aggregate into a daily raw pool (~500 articles).</li>
+        <li>Perform semantic deduplication using <code>sentence-transformers</code> (threshold 0.85).</li>
+        <li>Perform thematic clustering using Groq Qwen to produce 50–80 canonical <code>NewsCluster</code> records.</li>
+        <li>Calculate cluster centroid embedding and persist to DB.</li>
+        <li>Pre-generate base Cards and Deep Dives for each cluster.</li>
+      </ul>
+    </li>
+    <li><strong>Verification:</strong> Run <code>pipeline_stage1.py</code> locally and verify DB contains populated clusters with embeddings and pre-generated cards.</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- Checkpoint 19 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 19: Stage 2 User Matching &amp; Personalization Engine</span>
+    <span class="badge badge-blue">Backend Pipeline</span>
+  </div>
+  <p><strong>Goal:</strong> Deliver customized briefings to users in seconds using vector similarity.</p>
+  <ul>
+    <li>Implement <code>backend/pipeline_stage2.py</code>:
+      <ul>
+        <li>For each active user, query DB for the top 5–7 <code>NewsCluster</code> records matching <code>user.preference_embedding</code> via pgvector.</li>
+        <li>Synthesize the user's custom daily <code>SuperSummary</code> using Groq, aligned with their configured tone bucket.</li>
+        <li>Create <code>UserBriefing</code> link records.</li>
+      </ul>
+    </li>
+    <li>Measure performance: Verify stage 2 completes in &lt;1.5 seconds per user.</li>
+    <li><strong>Verification:</strong> Run matching test for 10 simulated users with divergent interests (e.g., Biotech vs LLM Infra) and verify personalized cluster assignments.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 20 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 20: Daily Email Digest Service (Resend Integration)</span>
+    <span class="badge badge-green">Multi-Channel</span>
+  </div>
+  <p><strong>Goal:</strong> Establish email as the primary daily retention anchor.</p>
+  <ul>
+    <li>Integrate <strong>Resend</strong> Python SDK in <code>backend/services/email_service.py</code>.</li>
+    <li>Design responsive HTML email template:
+      <ul>
+        <li>Header: Personalized date &amp; NewsBrief branding.</li>
+        <li>Lead: Daily Super Summary synthesis narrative.</li>
+        <li>Body: Top 3 Quick Cards with bullets and source links.</li>
+        <li>Call-to-Action: "Listen to 2-min Audio" &amp; "Read Deep Dive".</li>
+      </ul>
+    </li>
+    <li>Add user preference toggles in DB and API: <code>email_digest_enabled</code>, <code>delivery_hour</code>.</li>
+    <li><strong>Verification:</strong> Send test briefing email to a verified mailbox and inspect HTML rendering on mobile/desktop clients.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 21 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 21: Daily Audio Briefing Engine (TTS)</span>
+    <span class="badge badge-green">Multi-Channel</span>
+  </div>
+  <p><strong>Goal:</strong> Provide a 2–3 minute audio mini-podcast for commuters and mobile listeners.</p>
+  <ul>
+    <li>Implement <code>backend/services/audio_service.py</code> using OpenAI TTS (<code>tts-1</code>, voice <code>nova</code>/<code>onyx</code>) or ElevenLabs API.</li>
+    <li>Generate audio script summarizing the Super Summary narrative into a radio-style broadcast.</li>
+    <li>Convert text to MP3, upload to Supabase Storage / S3, and attach URL to <code>super_summaries.audio_url</code>.</li>
+    <li>Expose <code>GET /briefing/today/audio</code> streaming endpoint.</li>
+    <li><strong>Verification:</strong> Generate sample audio and verify playback duration and voice clarity.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 22 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 22: Team Slack Bot &amp; Workspace Integration</span>
+    <span class="badge badge-amber">B2B SaaS</span>
+  </div>
+  <p><strong>Goal:</strong> Unlock viral B2B team subscriptions via automated Slack channel drops.</p>
+  <ul>
+    <li>Implement Slack Bolt for Python in <code>backend/services/slack_bot.py</code>.</li>
+    <li>OAuth endpoints: <code>/slack/install</code> and <code>/slack/oauth_callback</code> for workspace installs.</li>
+    <li>Daily 9:00 AM job: Post formatted Slack Block Kit briefing to customer's <code>#market-intel</code> channel.</li>
+    <li>Interactive Slack buttons: "Expand Deep Dive", "Read Full Report".</li>
+    <li><strong>Verification:</strong> Trigger manual Slack webhook drop to a test Slack workspace channel.</li>
+  </ul>
+</div>
+
+<div class="page-break"></div>
+
+<!-- Checkpoint 23 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 23: Frontend Modernization &amp; Audio Player</span>
+    <span class="badge badge-purple">Mobile / Expo</span>
+  </div>
+  <p><strong>Goal:</strong> Update React Native mobile app to support audio playback, email settings, and new tiers.</p>
+  <ul>
+    <li>Add audio playback controls using <code>expo-av</code> in <code>HomeScreen.tsx</code> (Play, Pause, Scrub).</li>
+    <li>Add "Email Digest Settings" in user profile modal.</li>
+    <li>Update <code>PaywallScreen.tsx</code>:
+      <ul>
+        <li>Render 4-tier pricing model ($9.99 Pro, $24.99 Executive, $99 Team).</li>
+        <li>Add "Expense to Company" button generating a pre-filled PDF receipt.</li>
+      </ul>
+    </li>
+    <li><strong>Verification:</strong> Test audio playback and paywall navigation on iOS/Android simulator.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 24 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 24: Distributed Task Queue (Redis + Arq / Celery)</span>
+    <span class="badge badge-blue">Infrastructure</span>
+  </div>
+  <p><strong>Goal:</strong> Transition from in-memory APScheduler to robust distributed background workers.</p>
+  <ul>
+    <li>Set up Redis connection and <code>arq</code> worker in <code>backend/workers.py</code>.</li>
+    <li>Enqueue Stage 1 nightly job and fan out Stage 2 delivery jobs per timezone chunk.</li>
+    <li>Add retry logic with exponential backoff for external API calls (Groq, Resend, Slack).</li>
+    <li><strong>Verification:</strong> Enqueue 50 concurrent mock delivery tasks in Redis and verify zero dropped jobs.</li>
+  </ul>
+</div>
+
+<!-- Checkpoint 25 -->
+<div class="checkpoint-card">
+  <div class="checkpoint-header">
+    <span>Checkpoint 25: Admin Dashboard 2.0 &amp; Telemetry</span>
+    <span class="badge badge-blue">Admin &amp; Ops</span>
+  </div>
+  <p><strong>Goal:</strong> Provide complete visibility into costs, ingestion health, and conversion metrics.</p>
+  <ul>
+    <li>Revamp <code>backend/admin.html</code>:
+      <ul>
+        <li><strong>Ingestion Health:</strong> Status indicators for HN, GitHub, arXiv, RSS, and Serper feeds.</li>
+        <li><strong>Cost Telemetry:</strong> Daily Groq token count and external API spend tracker.</li>
+        <li><strong>Delivery Metrics:</strong> Daily email open rate, audio listen count, and Slack post status.</li>
+        <li><strong>Subscription Stats:</strong> Active Pro, Executive, and Team tier counts.</li>
+      </ul>
+    </li>
+    <li><strong>Verification:</strong> Load <code>/admin</code> dashboard with admin key and verify live rendering of telemetry.</li>
+  </ul>
+</div>
+
+<!-- SECTION 5: CONCLUSION -->
+<h2>5. Summary &amp; Execution Command</h2>
+<p>
+This blueprint shifts StartupX from a vulnerable, cost-heavy B2C news reader into a high-margin, scalable <strong>Autonomous Market &amp; Competitor Intelligence SaaS</strong>.
+</p>
+<p>
+Google Antigravity IDE should proceed systematically from <strong>Checkpoint 16</strong> through <strong>Checkpoint 25</strong>, verifying each milestone with automated tests before progressing to the next.
+</p>
+
+</body>
+</html>
