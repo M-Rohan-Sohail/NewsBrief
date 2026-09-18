@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.dialects.postgresql import UUID, ARRAY, JSONB
+from pgvector.sqlalchemy import Vector
 from db import Base
 
 class User(Base):
@@ -13,6 +14,39 @@ class User(Base):
     revenuecat_user_id = Column(String, nullable=True)
     expo_push_token = Column(String, nullable=True)
 
+class Team(Base):
+    __tablename__ = "teams"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name = Column(String, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+    subscription_status = Column(String, nullable=False, default="free")
+
+class TeamMembership(Base):
+    __tablename__ = "team_memberships"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    role = Column(String, nullable=False, default="member") # admin, member
+    
+    __table_args__ = (
+        UniqueConstraint("team_id", "user_id", name="uq_team_membership"),
+    )
+
+class SlackInstallation(Base):
+    __tablename__ = "slack_installations"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    team_id = Column(UUID(as_uuid=True), ForeignKey("teams.id", ondelete="CASCADE"), nullable=True)
+    workspace_id = Column(String, nullable=False, unique=True)
+    bot_token = Column(String, nullable=False)
+    channel_id = Column(String, nullable=True)
+    created_at = Column(DateTime(timezone=True), nullable=False)
+
+class UserEmailPreference(Base):
+    __tablename__ = "user_email_preferences"
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    daily_digest_enabled = Column(Boolean, nullable=False, default=True)
+    delivery_time = Column(String, nullable=False, default="06:30") # Local time string
+
 class UserPreference(Base):
     __tablename__ = "user_preferences"
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
@@ -22,6 +56,7 @@ class UserPreference(Base):
     tone_bucket = Column(String, nullable=False)
     tone_freeform = Column(String, nullable=True)
     exclude_keywords = Column(ARRAY(String), nullable=True)
+    preference_embedding = Column(Vector(384), nullable=True)
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
 class LLMCallLog(Base):
@@ -36,10 +71,12 @@ class NewsCluster(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     batch_date = Column(Date, nullable=False)
     canonical_title = Column(String, nullable=False)
+    category = Column(String, default="General Tech", nullable=False)
     representative_snippet = Column(String, nullable=False)
     source_count = Column(Integer, nullable=False)
     matched_tags = Column(ARRAY(String), nullable=False)
     article_refs = Column(JSONB, nullable=False)
+    embedding = Column(Vector(384), nullable=True)
 
     __table_args__ = (
         Index("ix_news_clusters_batch_date", "batch_date"),
@@ -69,6 +106,8 @@ class SuperSummary(Base):
     headline = Column(String, nullable=False)
     synthesis = Column(String, nullable=False)
     contributing_cluster_ids = Column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    audio_url = Column(String, nullable=True)
+    audio_duration_seconds = Column(Integer, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("cluster_set_key", "tone_bucket", name="uq_super_summary_cluster_set_tone"),

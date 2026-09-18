@@ -102,13 +102,13 @@
 - `[x]` Write automated test `backend/tests/test_ingestion_sources.py` verifying >60 unique articles extracted.
 
 ## Checkpoint 17: Database Schema Migration & pgvector Integration
-- `[ ]` Add `pgvector==0.3.6` to `backend/requirements.txt`.
-- `[ ]` Register `pgvector` in `backend/db.py` (`CREATE EXTENSION IF NOT EXISTS vector`).
-- `[ ]` Add `embedding = Column(Vector(384))` to `models.NewsCluster` and `preference_embedding = Column(Vector(384))` to `models.UserPreference`.
-- `[ ]` Add B2B models to `backend/models.py`: `Team`, `TeamMembership`, `SlackInstallation`, and `UserEmailPreference`.
-- `[ ]` Add `audio_url` and `audio_duration_seconds` to `models.SuperSummary`.
-- `[ ]` Create and execute Alembic migration `backend/alembic/versions/0002_add_pgvector_and_b2b_models.py`.
-- `[ ]` Write automated test `backend/tests/test_database_vector.py` verifying vector insert and `<=>` cosine distance search.
+- `[x]` Add `pgvector==0.3.6` to `backend/requirements.txt`.
+- `[x]` Register `pgvector` in `backend/db.py` (`CREATE EXTENSION IF NOT EXISTS vector`).
+- `[x]` Add `embedding = Column(Vector(384))` to `models.NewsCluster` and `preference_embedding = Column(Vector(384))` to `models.UserPreference`.
+- `[x]` Add B2B models to `backend/models.py`: `Team`, `TeamMembership`, `SlackInstallation`, and `UserEmailPreference`.
+- `[x]` Add `audio_url` and `audio_duration_seconds` to `models.SuperSummary`.
+- `[x]` Create and execute Alembic migration `backend/alembic/versions/0002_add_pgvector_and_b2b_models.py`.
+- `[x]` Write automated test `backend/tests/test_database_vector.py` verifying vector insert and `<=>` cosine distance search.
 
 ## Checkpoint 18: Stage 1 Global World-State Pipeline
 - `[ ]` Implement `backend/pipeline_stage1.py` to run independently of individual users.
