@@ -111,13 +111,13 @@
 - `[x]` Write automated test `backend/tests/test_database_vector.py` verifying vector insert and `<=>` cosine distance search.
 
 ## Checkpoint 18: Stage 1 Global World-State Pipeline
-- `[ ]` Implement `backend/pipeline_stage1.py` to run independently of individual users.
-- `[ ]` Concurrently aggregate articles across all 4 ingestion sources into a single raw pool (~400–600 items).
-- `[ ]` Deduplicate articles using `SentenceTransformer("all-MiniLM-L6-v2")` with cosine threshold 0.82.
-- `[ ]` Cluster surviving articles into 40–70 canonical clusters via Groq (`qwen/qwen3.8-27b`).
-- `[ ]` Calculate normalized centroid embedding for each cluster and assign to `NewsCluster.embedding`.
-- `[ ]` Pre-generate base Cards (`high_signal`, `technical_deep`) and top 10 Deep Dives once into the database.
-- `[ ]` Write automated test `backend/tests/test_pipeline_stage1.py` verifying DB persistence.
+- `[x]` Implement `backend/pipeline_stage1.py` to run independently of individual users.
+- `[x]` Concurrently aggregate articles across all 4 ingestion sources into a single raw pool (~400–600 items).
+- `[x]` Deduplicate articles using `SentenceTransformer("all-MiniLM-L6-v2")` with cosine threshold 0.82.
+- `[x]` Cluster surviving articles into 40–70 canonical clusters via Groq (`qwen/qwen3.8-27b`).
+- `[x]` Calculate normalized centroid embedding for each cluster and assign to `NewsCluster.embedding`.
+- `[x]` Pre-generate base Cards (`high_signal`, `technical_deep`) and top 10 Deep Dives once into the database.
+- `[x]` Write automated test `backend/tests/test_pipeline_stage1.py` verifying DB persistence.
 
 ## Checkpoint 19: Stage 2 User Matching & Personalization Engine
 - `[ ]` Implement `backend/pipeline_stage2.py` for personalized briefing generation.

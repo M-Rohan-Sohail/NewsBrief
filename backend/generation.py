@@ -141,3 +141,32 @@ Raw Articles Text:
     except Exception as e:
         logger.error(f"Failed to generate deep dive: {e}")
         return f"# Error Generating Deep Dive\n\nPlease try again later. Details: {e}"
+
+def pre_generate_base_cards(cluster: Dict[str, Any], tones: List[str] = ["high_signal", "technical_deep"]) -> Dict[str, Dict[str, Any]]:
+    """
+    Pre-generates cards for a cluster across multiple base tones.
+    Returns a dictionary mapping tone -> card data.
+    """
+    cards = {}
+    for tone in tones:
+        logger.info(f"Pre-generating card for '{cluster.get('canonical_title')}' in tone '{tone}'")
+        cards[tone] = generate_card(cluster, tone)
+    return cards
+
+def pre_generate_deep_dive(cluster: Dict[str, Any]) -> str:
+    """
+    Pre-generates a deep dive for a cluster.
+    """
+    title = cluster.get("canonical_title", "Unknown Topic")
+    articles = cluster.get("articles", [])
+    
+    # Combine content for deep dive context
+    articles_text = ""
+    for idx, art in enumerate(articles):
+        articles_text += f"--- Source {idx+1}: {art.get('source_name')} ---\n"
+        articles_text += f"Title: {art.get('title')}\n"
+        # For deep dive, we want more context, up to 1500 chars per article
+        articles_text += f"{art.get('content')[:1500]}\n\n"
+        
+    logger.info(f"Pre-generating deep dive for '{title}'")
+    return generate_deep_dive(title, articles_text)

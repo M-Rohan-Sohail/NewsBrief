@@ -63,7 +63,7 @@ def deduplicate_articles(articles: List[Dict[str, Any]], threshold: float = 0.85
     logger.info(f"Deduplication complete: {len(articles)} -> {len(deduped)} articles.")
     return deduped
 
-def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str]) -> List[Dict[str, Any]]:
+def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str] = None) -> List[Dict[str, Any]]:
     """
     Group articles into thematic clusters using the Groq LLM.
     """
@@ -86,17 +86,24 @@ def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str]) -
         snippet = article.get("content", "")[:300].replace("\n", " ")
         article_summaries += f"[{idx}] Title: {title} | Snippet: {snippet}...\n"
 
-    tags_str = ", ".join(thematic_tags)
-
-    prompt = f"""
-You are a news editor. Group the following articles into logical thematic clusters based on these tags: {tags_str}.
+    if thematic_tags:
+        tags_str = ", ".join(thematic_tags)
+        prompt = f"""You are a news editor. Group the following articles into logical thematic clusters based on these tags: {tags_str}.
 An article can only belong to ONE cluster. If an article doesn't fit any tag, group it under "Other".
+"""
+    else:
+        prompt = f"""You are a news editor. Group the following articles into logical thematic clusters (e.g., "AI Models", "Open Source", "Security").
+Discover the best categories autonomously based on the provided articles.
+An article can only belong to ONE cluster.
+"""
 
+    prompt += f"""
 Output MUST be a valid JSON object matching this schema exactly:
 {{
   "clusters": [
     {{
       "canonical_title": "A short, overarching title for this cluster",
+      "category": "The overarching broad category this fits into",
       "representative_snippet": "A 1-2 sentence synthesis of what this cluster is about",
       "matched_tags": ["tag1", "tag2"],
       "article_indices": [0, 2] // The integer indices of the articles in this cluster
@@ -137,3 +144,12 @@ Articles:
     except Exception as e:
         logger.error(f"Clustering failed: {e}")
         return []
+
+def compute_centroid(canonical_title: str, representative_snippet: str) -> List[float]:
+    """
+    Computes a 384-dimensional embedding for a cluster using its title and snippet.
+    """
+    embedder = get_embedder()
+    text_to_embed = f"{canonical_title}. {representative_snippet}"
+    embedding = embedder.encode(text_to_embed)
+    return embedding.tolist()
