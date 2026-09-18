@@ -59,3 +59,11 @@ class RawArticle(BaseModel):
     tags: List[str] = []
     author: Optional[str] = None
     score: Optional[int] = 0
+
+class EmailPreferenceResponse(BaseModel):
+    daily_digest_enabled: bool
+    delivery_time: str
+
+class UpdateEmailPreferenceRequest(BaseModel):
+    daily_digest_enabled: Optional[bool] = None
+    delivery_time: Optional[str] = None

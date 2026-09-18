@@ -129,11 +129,12 @@
 - `[x]` Write automated test `backend/tests/test_pipeline_stage2.py`.
 
 ## Checkpoint 20: Daily Email Digest Service (Resend Integration)
-- `[ ]` Add `resend==2.6.0` to `backend/requirements.txt`.
-- `[ ]` Implement `backend/services/email_service.py` to dispatch HTML emails via Resend API.
-- `[ ]` Design responsive HTML template `backend/templates/email_digest.html` with Super Summary, top 3 cards, and deep dive links.
-- `[ ]` Add endpoints `GET /users/me/email-preferences` and `PUT /users/me/email-preferences` in `backend/main.py`.
-- `[ ]` Write automated test `backend/tests/test_email_service.py` with mocked Resend client.
+- `[x]` Add `resend==2.6.0` to `backend/requirements.txt`.
+- `[x]` Create `backend/services/__init__.py`.
+- `[x]` Create `backend/services/email_service.py`.
+- `[x]` Create `backend/templates/email_digest.html`.
+- `[x]` Add endpoints `GET /users/me/email-preferences`, `PUT /users/me/email-preferences` in `backend/main.py`.
+- `[x]` Write automated test `backend/tests/test_email_service.py`. with mocked Resend client.
 
 ## Checkpoint 21: Daily Audio Briefing Engine (TTS)
 - `[ ]` Add `openai==1.65.0` to `backend/requirements.txt`.

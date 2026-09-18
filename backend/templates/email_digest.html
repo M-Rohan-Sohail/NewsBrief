@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsBrief Daily</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            background-color: #f4f5f7;
+            margin: 0;
+            padding: 0;
+            color: #333333;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+        .header {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+        .super-summary {
+            padding: 40px;
+            background-color: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .super-summary h2 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #1e293b;
+        }
+        .super-summary p {
+            font-size: 16px;
+            color: #475569;
+        }
+        .content {
+            padding: 40px;
+        }
+        .card {
+            margin-bottom: 30px;
+            padding-bottom: 30px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .card:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .card h3 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #0f172a;
+        }
+        .card ul {
+            padding-left: 20px;
+            margin: 15px 0;
+            color: #334155;
+        }
+        .card li {
+            margin-bottom: 8px;
+        }
+        .card-meta {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .btn-group {
+            margin-top: 15px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin-right: 10px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background-color: #2563eb;
+            color: #ffffff;
+        }
+        .btn-secondary {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .footer {
+            background-color: #f8fafc;
+            padding: 20px 40px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+            border-top: 1px solid #e2e8f0;
+        }
+        .footer a {
+            color: #64748b;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NewsBrief Daily</h1>
+            <p>[[DATE]]</p>
+        </div>
+        
+        <div class="super-summary">
+            <h2>[[SUPER_HEADLINE]]</h2>
+            <p>[[SUPER_SYNTHESIS]]</p>
+            <div style="margin-top: 20px;">
+                <a href="[[APP_URL]]/audio" class="btn btn-primary">Listen to Audio Briefing</a>
+            </div>
+        </div>
+
+        <div class="content">
+            [[CARDS_HTML]]
+        </div>
+
+        <div class="footer">
+            <p>You received this because you are subscribed to the Daily Digest.</p>
+            <p><a href="[[APP_URL]]/settings">Manage Preferences</a></p>
+        </div>
+    </div>
+</body>
+</html>

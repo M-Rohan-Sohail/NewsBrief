@@ -112,6 +112,46 @@ def update_push_token(request: PushTokenRequest, db: Session = Depends(get_db), 
     db.commit()
     return {"status": "success"}
 
+@app.get("/users/me/email-preferences", response_model=schemas.EmailPreferenceResponse)
+def get_email_preferences(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    pref = db.query(models.UserEmailPreference).filter(models.UserEmailPreference.user_id == current_user.id).first()
+    if not pref:
+        # Return defaults
+        return schemas.EmailPreferenceResponse(daily_digest_enabled=True, delivery_time="06:30")
+    return schemas.EmailPreferenceResponse(
+        daily_digest_enabled=pref.daily_digest_enabled,
+        delivery_time=pref.delivery_time
+    )
+
+@app.put("/users/me/email-preferences", response_model=schemas.EmailPreferenceResponse)
+def update_email_preferences(
+    request: schemas.UpdateEmailPreferenceRequest, 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user)
+):
+    pref = db.query(models.UserEmailPreference).filter(models.UserEmailPreference.user_id == current_user.id).first()
+    
+    if not pref:
+        pref = models.UserEmailPreference(
+            user_id=current_user.id,
+            daily_digest_enabled=request.daily_digest_enabled if request.daily_digest_enabled is not None else True,
+            delivery_time=request.delivery_time if request.delivery_time is not None else "06:30"
+        )
+        db.add(pref)
+    else:
+        if request.daily_digest_enabled is not None:
+            pref.daily_digest_enabled = request.daily_digest_enabled
+        if request.delivery_time is not None:
+            pref.delivery_time = request.delivery_time
+            
+    db.commit()
+    db.refresh(pref)
+    
+    return schemas.EmailPreferenceResponse(
+        daily_digest_enabled=pref.daily_digest_enabled,
+        delivery_time=pref.delivery_time
+    )
+
 def verify_admin_key(key: str = None):
     if key != "mysecret":
         raise HTTPException(status_code=403, detail="Forbidden")
