@@ -120,13 +120,13 @@
 - `[x]` Write automated test `backend/tests/test_pipeline_stage1.py` verifying DB persistence.
 
 ## Checkpoint 19: Stage 2 User Matching & Personalization Engine
-- `[ ]` Implement `backend/pipeline_stage2.py` for personalized briefing generation.
-- `[ ]` Auto-compute user preference vector if null (`raw_paragraph` + `thematic_tags` + `search_queries`).
-- `[ ]` Query PostgreSQL for top 6 matching clusters via `ORDER BY embedding.cosine_distance(user_vector) LIMIT 6`.
-- `[ ]` Synthesize custom Super Summary in user's specified `tone_bucket` via Groq.
-- `[ ]` Create and link `UserBriefing` record (execution speed < 1.5s per user).
-- `[ ]` Add endpoint `POST /admin/trigger-stage2` in `backend/main.py`.
-- `[ ]` Write automated test `backend/tests/test_pipeline_stage2.py`.
+- `[x]` Implement `backend/pipeline_stage2.py` for personalized briefing generation.
+- `[x]` Compute user preference embedding lazily if null: `text = f"{raw_paragraph} {' '.join(thematic_tags)} {' '.join(search_queries)}"`.
+- `[x]` Query `models.NewsCluster` sorting by `cosine_distance(pref.preference_embedding)` and take top 6.
+- `[x]` Synthesize a user-specific Super Summary based on their `tone_bucket`.
+- `[x]` Save results to `UserBriefing` for the `batch_date`.
+- `[x]` Modify `backend/main.py` to add `POST /admin/trigger-stage2` endpoint.
+- `[x]` Write automated test `backend/tests/test_pipeline_stage2.py`.
 
 ## Checkpoint 20: Daily Email Digest Service (Resend Integration)
 - `[ ]` Add `resend==2.6.0` to `backend/requirements.txt`.

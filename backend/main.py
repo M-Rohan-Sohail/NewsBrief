@@ -128,6 +128,16 @@ def trigger_pipeline(background_tasks: BackgroundTasks, is_admin: bool = Depends
     background_tasks.add_task(run_pipeline_sync)
     return {"status": "Pipeline triggered in background"}
 
+@app.post("/admin/trigger-stage2")
+def trigger_stage2(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
+    from pipeline_stage2 import run_stage2
+    
+    def run_stage2_sync():
+        run_stage2()
+        
+    background_tasks.add_task(run_stage2_sync)
+    return {"status": "Stage 2 Pipeline triggered in background"}
+
 from fastapi.responses import HTMLResponse
 import os
 
