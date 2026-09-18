@@ -166,9 +166,9 @@
 - `[x]` Write automated test `backend/tests/test_worker_tasks.py`.
 
 ## Checkpoint 25: Deployment & Final Polish
-- `[ ]` Configure `Dockerfile` and `docker-compose.yml` for production (PostgreSQL, Redis, FastAPI).
-- `[ ]` Ensure `/admin` is properly protected by secret key.
-- `[ ]` Write end-to-end load test `backend/tests/test_load.py`.
-- `[ ]` Final visual pass on frontend components.
+- `[x]` Configure `Dockerfile` and `docker-compose.yml` for production (PostgreSQL, Redis, FastAPI).
+- `[x]` Ensure `/admin` is properly protected by secret key.
+- `[x]` Write end-to-end load test `backend/tests/test_load.py`.
+- `[x]` Final visual pass on frontend components.
 - `[ ]` Add manual trigger buttons for Stage 1, Stage 2, and test email.
 - `[ ]` Write automated test `backend/tests/test_admin_endpoints.py`.
