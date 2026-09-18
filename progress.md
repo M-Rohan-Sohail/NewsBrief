@@ -151,9 +151,10 @@
 - `[x]` Write automated test `backend/tests/test_slack_service.py` verifying Block Kit schema.
 
 ## Checkpoint 23: Frontend Modernization & Audio Player
-- `[ ]` Add `expo-av@~15.0.2` to `frontend/package.json`.
-- `[ ]` Create `frontend/src/components/AudioPlayer.tsx` with Play/Pause and progress bar.
-- `[ ]` Embed `AudioPlayer` on `HomeScreen.tsx` above Super Summary.
+- `[x]` Add `expo-av@~15.0.2` to `frontend/package.json`.
+- `[x]` Create `frontend/src/components/AudioPlayer.tsx` with Play/Pause and progress bar.
+- `[x]` Update `frontend/src/screens/HomeScreen.tsx` to include `AudioPlayer` component.
+- `[x]` Modernize UI: Apply dynamic gradient backgrounds and premium typography (Inter/SF Pro) to `HomeScreen.tsx`.
 - `[ ]` Update `PaywallScreen.tsx` with 4-tier pricing ($0 Free, $9.99 Pro, $24.99 Executive, $99 Team).
 - `[ ]` Create `frontend/src/components/ExpenseModal.tsx` for 1-click corporate reimbursement receipts.
 - `[ ]` Update `frontend/src/types.ts` with `audio_url` and new subscription tier types.
