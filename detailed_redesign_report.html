@@ -571,19 +571,19 @@ def match_clusters_for_user(db: Session, user_id: UUID, limit: int = 6) -> List[
 <!-- CHECKPOINT 21 -->
 <div class="cp-box">
   <div class="cp-header">
-    <span>Checkpoint 21: Daily Audio Briefing Engine (OpenAI TTS)</span>
+    <span>Checkpoint 21: Daily Audio Briefing Engine (Free Neural TTS)</span>
     <span class="badge badge-green">Multi-Channel</span>
   </div>
 
   <div class="cp-section-title">Objective &amp; Scope</div>
   <p>
-    Generate an automated 2–3 minute podcast-style audio briefing every morning using OpenAI TTS, saving to local storage / Supabase bucket and exposing a streamable endpoint.
+    Generate an automated 2–3 minute podcast-style audio briefing every morning using 100% free Microsoft Edge Neural TTS (<code>edge-tts</code>, zero API keys required), saving to local storage / Supabase bucket and exposing a streamable endpoint.
   </p>
 
   <div class="cp-section-title">Files to Create / Modify</div>
   <ul>
-    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>openai==1.65.0</code>.</li>
-    <li><code>[NEW] backend/services/audio_service.py</code> — Audio generation and storage manager.</li>
+    <li><code>[MODIFY] backend/requirements.txt</code> — Add <code>edge-tts==6.1.12</code>.</li>
+    <li><code>[NEW] backend/services/audio_service.py</code> — Audio generation and storage manager using <code>edge-tts</code> (with optional OpenAI fallback).</li>
     <li><code>[MODIFY] backend/main.py</code> — Expose endpoint <code>GET /briefing/today/audio</code>.</li>
     <li><code>[NEW] backend/tests/test_audio_service.py</code> — Test script verifying audio generation.</li>
   </ul>
@@ -591,14 +591,13 @@ def match_clusters_for_user(db: Session, user_id: UUID, limit: int = 6) -> List[
   <div class="cp-section-title">Audio Pipeline Specifications</div>
   <ul>
     <li><strong>Script Generation:</strong> Groq LLM converts the Super Summary + top 3 headlines into a natural radio broadcast script (280–350 words, tone: professional news anchor). Example opening: <em>"Good morning. Here is your NewsBrief intelligence report for [Day]..."</em>.</li>
-    <li><strong>TTS Synthesis:</strong>
+    <li><strong>TTS Synthesis (100% Free Edge Neural TTS):</strong>
       <pre>
-response = openai_client.audio.speech.create(
-    model="tts-1",
-    voice="onyx", # Deep, executive radio voice
-    input=broadcast_script,
-    response_format="mp3"
-)
+import edge_tts
+
+# Zero-cost natural executive anchor voice (no API key required)
+communicate = edge_tts.Communicate(broadcast_script, voice="en-US-ChristopherNeural")
+await communicate.save(output_mp3_path)
 </pre>
     </li>
     <li><strong>Storage:</strong> Save MP3 to local folder <code>backend/static/audio/{batch_date}/{summary_id}.mp3</code> or Supabase Storage. Populate <code>super_summaries.audio_url</code>.</li>
@@ -606,7 +605,7 @@ response = openai_client.audio.speech.create(
 
   <div class="cp-section-title">Verification Command</div>
   <pre>python3 -m pytest backend/tests/test_audio_service.py -v</pre>
-  <p><em>Expected: Generates valid MP3 file &gt;100KB with playable duration between 120s and 180s.</em></p>
+  <p><em>Expected: Generates valid MP3 file &gt;100KB with playable duration between 120s and 180s without requiring paid API keys.</em></p>
 </div>
 
 <div class="page-break"></div>
@@ -835,7 +834,7 @@ class WorkerSettings:
     <tr>
       <td><strong>CP-21</strong></td>
       <td>Audio</td>
-      <td>OpenAI TTS 2–3 min daily radio podcast generator</td>
+      <td>Free Microsoft Edge Neural TTS (edge-tts) 2–3 min radio podcast generator</td>
       <td><code>pytest backend/tests/test_audio_service.py</code></td>
     </tr>
     <tr>

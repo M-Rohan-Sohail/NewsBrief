@@ -17,6 +17,10 @@ from auth import create_access_token, create_refresh_token, get_current_user
 
 app = FastAPI(title="NewsBrief API", version="1.0.0")
 
+from fastapi.staticfiles import StaticFiles
+import os
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
+
 from apscheduler.schedulers.background import BackgroundScheduler
 import asyncio
 
@@ -370,6 +374,47 @@ def get_briefing_today(
             ) for c in cards
         ]
     )
+
+@app.get("/briefing/today/audio", response_model=schemas.AudioResponse)
+def get_briefing_audio(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    today = datetime.now(timezone.utc).date()
+    
+    latest_briefing = db.query(models.UserBriefing)\
+        .filter(models.UserBriefing.user_id == current_user.id)\
+        .order_by(models.UserBriefing.batch_date.desc())\
+        .first()
+        
+    if not latest_briefing:
+        raise HTTPException(status_code=404, detail="No briefing found.")
+        
+    super_summary = db.query(models.SuperSummary).filter(models.SuperSummary.id == latest_briefing.super_summary_id).first()
+    if not super_summary:
+        raise HTTPException(status_code=404, detail="Super summary not found")
+        
+    if super_summary.audio_url:
+        return schemas.AudioResponse(audio_url=super_summary.audio_url, status="ready")
+        
+    # Trigger audio generation if not exists
+    from services.audio_service import generate_tts_audio
+    cards = db.query(models.Card).filter(models.Card.id.in_(latest_briefing.card_ids)).all()
+    
+    def generate_audio_sync():
+        from db import SessionLocal
+        db_session = SessionLocal()
+        try:
+            # Re-fetch in new session
+            ss = db_session.query(models.SuperSummary).filter(models.SuperSummary.id == super_summary.id).first()
+            cc = db_session.query(models.Card).filter(models.Card.id.in_([c.id for c in cards])).all()
+            generate_tts_audio(ss, cc, db_session)
+        finally:
+            db_session.close()
+
+    background_tasks.add_task(generate_audio_sync)
+    return schemas.AudioResponse(audio_url=None, status="generating")
 
 @app.post("/cards/{card_id}/view", response_model=schemas.CardViewResponse)
 def view_card(

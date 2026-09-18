@@ -199,16 +199,16 @@ STAGE 2: PERSONALIZED USER DELIVERY ENGINE (Daily at 06:30 Local User Time)
 
 ---
 
-### Checkpoint 21: Daily Audio Briefing Engine (OpenAI TTS)
-- **Objective:** Automated 2–3 minute podcast-style MP3 briefing for commutes and mobile playback.
+### Checkpoint 21: Daily Audio Briefing Engine (Free Neural TTS)
+- **Objective:** Automated 2–3 minute podcast-style MP3 briefing for commutes using 100% free Microsoft Neural TTS (`edge-tts`, zero API keys required, with optional OpenAI fallback).
 - **Target Files:**
-  - `[MODIFY] backend/requirements.txt` — Add `openai==1.65.0`.
+  - `[MODIFY] backend/requirements.txt` — Add `edge-tts==6.1.12`.
   - `[NEW] backend/services/audio_service.py`
   - `[MODIFY] backend/main.py` — Add `GET /briefing/today/audio`.
   - `[NEW] backend/tests/test_audio_service.py`
 - **Implementation:**
   - Groq LLM writes a 300-word conversational radio broadcast script.
-  - Call OpenAI Audio Speech API (`model="tts-1"`, `voice="onyx"`, `response_format="mp3"`).
+  - Call `edge_tts.Communicate(script, voice="en-US-ChristopherNeural")` to generate high-fidelity human-like speech for free.
   - Save MP3 to static/S3 storage and update `super_summaries.audio_url`.
 - **Verification:** `pytest backend/tests/test_audio_service.py -v`.
 

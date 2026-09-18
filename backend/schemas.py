@@ -67,3 +67,7 @@ class EmailPreferenceResponse(BaseModel):
 class UpdateEmailPreferenceRequest(BaseModel):
     daily_digest_enabled: Optional[bool] = None
     delivery_time: Optional[str] = None
+
+class AudioResponse(BaseModel):
+    audio_url: Optional[str]
+    status: str

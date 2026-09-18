@@ -136,12 +136,12 @@
 - `[x]` Add endpoints `GET /users/me/email-preferences`, `PUT /users/me/email-preferences` in `backend/main.py`.
 - `[x]` Write automated test `backend/tests/test_email_service.py`. with mocked Resend client.
 
-## Checkpoint 21: Daily Audio Briefing Engine (TTS)
-- `[ ]` Add `openai==1.65.0` to `backend/requirements.txt`.
-- `[ ]` Implement `backend/services/audio_service.py`: prompt Groq for 300-word broadcast script and synthesize via OpenAI TTS (`tts-1`, voice `onyx`).
-- `[ ]` Store MP3 in `backend/static/audio/{batch_date}/{summary_id}.mp3` and set `SuperSummary.audio_url`.
-- `[ ]` Expose streaming endpoint `GET /briefing/today/audio` in `backend/main.py`.
-- `[ ]` Write automated test `backend/tests/test_audio_service.py` verifying valid MP3 output.
+## Checkpoint 21: Daily Audio Briefing Engine (Free Neural TTS)
+- `[x]` Add `edge-tts==6.1.12` to `backend/requirements.txt` (100% free Microsoft Neural TTS, zero API key required).
+- `[x]` Implement `backend/services/audio_service.py`: prompt Groq for 300-word radio script and synthesize via `edge-tts` using `en-US-ChristopherNeural` (with optional OpenAI TTS fallback if `OPENAI_API_KEY` is present).
+- `[x]` Store MP3 in `backend/static/audio/{batch_date}/{summary_id}.mp3` and set `SuperSummary.audio_url`.
+- `[x]` Expose streaming endpoint `GET /briefing/today/audio` in `backend/main.py`.
+- `[x]` Write automated test `backend/tests/test_audio_service.py` verifying valid MP3 output without requiring paid keys.
 
 ## Checkpoint 22: Team Slack Bot & Workspace Integration
 - `[ ]` Add `slack-sdk==3.34.0` and `slack-bolt==1.22.0` to `backend/requirements.txt`.
