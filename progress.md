@@ -155,20 +155,20 @@
 - `[x]` Create `frontend/src/components/AudioPlayer.tsx` with Play/Pause and progress bar.
 - `[x]` Update `frontend/src/screens/HomeScreen.tsx` to include `AudioPlayer` component.
 - `[x]` Modernize UI: Apply dynamic gradient backgrounds and premium typography (Inter/SF Pro) to `HomeScreen.tsx`.
-- `[ ]` Update `PaywallScreen.tsx` with 4-tier pricing ($0 Free, $9.99 Pro, $24.99 Executive, $99 Team).
-- `[ ]` Create `frontend/src/components/ExpenseModal.tsx` for 1-click corporate reimbursement receipts.
-- `[ ]` Update `frontend/src/types.ts` with `audio_url` and new subscription tier types.
+- `[x]` Update `PaywallScreen.tsx` with 4-tier pricing ($0 Free, $9.99 Pro, $24.99 Executive, $99 Team).
+- `[x]` Create `frontend/src/components/ExpenseModal.tsx` for 1-click corporate reimbursement receipts.
+- `[x]` Update `frontend/src/types.ts` with `audio_url` and new subscription tier types.
 
 ## Checkpoint 24: Distributed Task Queue (Redis + Arq)
-- `[ ]` Add `arq==0.26.1` and `redis==5.2.1` to `backend/requirements.txt`.
-- `[ ]` Implement `backend/worker.py` configuring Arq worker, cron schedules (03:00 UTC Stage 1, hourly Stage 2), and retry policies.
-- `[ ]` Create `docker-compose.yml` orchestrating FastAPI, Redis, and Arq worker.
-- `[ ]` Write automated test `backend/tests/test_worker_tasks.py`.
+- `[x]` Add `arq==0.26.1` and `redis==5.2.1` to `backend/requirements.txt`.
+- `[x]` Implement `backend/worker.py` configuring Arq worker, cron schedules (03:00 UTC Stage 1, hourly Stage 2), and retry policies.
+- `[x]` Create `docker-compose.yml` orchestrating FastAPI, Redis, and Arq worker.
+- `[x]` Write automated test `backend/tests/test_worker_tasks.py`.
 
-## Checkpoint 25: Admin Dashboard 2.0 & Telemetry
-- `[ ]` Revamp `backend/admin.html` with Tailwind CSS, source health indicators (HN, GitHub, arXiv, RSS), and cost counters.
-- `[ ]` Expand `GET /admin/stats` in `backend/main.py` to return source counts, token spend, and channel metrics.
+## Checkpoint 25: Deployment & Final Polish
+- `[ ]` Configure `Dockerfile` and `docker-compose.yml` for production (PostgreSQL, Redis, FastAPI).
+- `[ ]` Ensure `/admin` is properly protected by secret key.
+- `[ ]` Write end-to-end load test `backend/tests/test_load.py`.
+- `[ ]` Final visual pass on frontend components.
 - `[ ]` Add manual trigger buttons for Stage 1, Stage 2, and test email.
 - `[ ]` Write automated test `backend/tests/test_admin_endpoints.py`.
-
-

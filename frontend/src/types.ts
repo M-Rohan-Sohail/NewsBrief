@@ -40,10 +40,13 @@ export interface Card {
   source_url: string;
 }
 
+export type SubscriptionTier = 'free' | 'pro' | 'executive' | 'team';
+
 export interface SuperSummary {
   id: string;
   headline: string;
   synthesis: string;
+  audio_url?: string;
 }
 
 export interface BriefingResponse {
