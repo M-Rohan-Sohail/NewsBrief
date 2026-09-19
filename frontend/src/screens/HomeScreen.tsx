@@ -6,9 +6,10 @@ import { RootStackParamList, BriefingResponse } from '../types';
 import { useFocusEffect } from '@react-navigation/native';
 import { useRevenueCat } from '../context/RevenueCatContext';
 import { AudioPlayer } from '../components/AudioPlayer';
+import { EmailPreferencesModal } from '../components/EmailPreferencesModal';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+import { API_URL } from '../config';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Home'>;
@@ -22,6 +23,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [isAudioGenerating, setIsAudioGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -131,11 +133,17 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.dateText}>
                {new Date(briefing.batch_date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </Text>
-            <TouchableOpacity onPress={signOut}>
-                <Text style={styles.signOutTextSmall}>Sign Out</Text>
-            </TouchableOpacity>
+            <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity onPress={() => setIsEmailModalVisible(true)} style={{marginRight: 16}}>
+                <Text style={{color: '#94A3B8', fontSize: 20}}>⚙️</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={signOut}>
+                  <Text style={styles.signOutTextSmall}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
           </View>
     
+          <EmailPreferencesModal visible={isEmailModalVisible} onClose={() => setIsEmailModalVisible(false)} />
           <Text style={styles.greeting}>Your Daily Briefing</Text>
           
           {briefing.is_preparing_today && (

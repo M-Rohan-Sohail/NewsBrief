@@ -7,7 +7,7 @@ import Markdown from 'react-native-markdown-display';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReadAsOne'>;
 
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+import { API_URL } from '../config';
 
 type DeepDiveResult = {
   cluster_id: string;
@@ -21,7 +21,7 @@ export default function ReadAsOneScreen({ route, navigation }: Props) {
   const { accessToken } = useAuth();
   
   const [results, setResults] = useState<DeepDiveResult[]>(
-    cluster_ids.map(id => ({ cluster_id: id, markdown: null, loading: true, error: null }))
+    cluster_ids.map((id: string) => ({ cluster_id: id, markdown: null, loading: true, error: null }))
   );
 
   const fetchDeepDive = async (cluster_id: string) => {

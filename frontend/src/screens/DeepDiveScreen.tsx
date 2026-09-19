@@ -7,7 +7,7 @@ import Markdown from 'react-native-markdown-display';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'DeepDive'>;
 
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+import { API_URL } from '../config';
 
 export default function DeepDiveScreen({ route, navigation }: Props) {
   const { cluster_id } = route.params;

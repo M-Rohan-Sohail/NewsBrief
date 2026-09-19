@@ -12,7 +12,7 @@ type Props = {
 };
 
 const TONE_OPTIONS = ["high_signal", "technical_deep", "casual", "executive_brief", "default"];
-const API_URL = "http://localhost:8000";
+import { API_URL } from '../config';
 
 export default function PreferenceConfirmationScreen({ navigation, route }: Props) {
   const { accessToken } = useAuth();

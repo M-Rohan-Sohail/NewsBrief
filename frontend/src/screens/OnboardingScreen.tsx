@@ -9,7 +9,7 @@ type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Onboarding'>;
 };
 
-const API_URL = "http://localhost:8000";
+import { API_URL } from '../config';
 
 const MOCK_EXTRACTION = {
   search_queries: ["AI startup news", "LLM inference optimization", "local language models"],

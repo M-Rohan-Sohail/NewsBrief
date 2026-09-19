@@ -8,7 +8,7 @@ import { RootStackParamList } from '../types';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const API_URL = "http://localhost:8000";
+import { API_URL } from '../config';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;

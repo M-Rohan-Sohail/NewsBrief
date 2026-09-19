@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { Platform } from 'react-native';
+import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import { useAuth } from './AuthContext';
+import { API_URL } from '../config';
 
 // Mock types since react-native-purchases install failed in sandbox
 type PurchasesOffering = any;
@@ -24,7 +25,7 @@ export const RevenueCatProvider: React.FC<{ children: React.ReactNode }> = ({ ch
   const syncPremiumWithBackend = async () => {
     if (!accessToken) return;
     try {
-      const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+
       await fetch(`${API_URL}/auth/sync-premium`, {
         method: 'POST',
         headers: {

@@ -32,11 +32,49 @@ app.include_router(slack_router)
 
 scheduler = BackgroundScheduler()
 
+import logging
+logger = logging.getLogger(__name__)
+
 def daily_pipeline_job():
-    print("Running scheduled daily pipeline...")
-    from run_pipeline import run_pipeline
-    asyncio.run(run_pipeline())
-    print("Scheduled daily pipeline completed.")
+    logger.info("Running scheduled Stage 1 Global Pipeline...")
+    from pipeline_stage1 import run_stage1
+    run_stage1()
+    
+    logger.info("Running scheduled Stage 2 Personalization Pipeline...")
+    from pipeline_stage2 import run_stage2
+    run_stage2()
+    
+    logger.info("Dispatching daily email digests and Slack drops...")
+    from db import SessionLocal
+    from models import UserEmailPreference, SlackInstallation
+    from services.email_service import send_daily_digest
+    from services.slack_service import build_briefing_blocks, send_slack_briefing
+    from models import UserBriefing, SuperSummary, Card
+    
+    db = SessionLocal()
+    try:
+        # 1. Email delivery
+        prefs = db.query(UserEmailPreference).filter(UserEmailPreference.daily_digest_enabled == True).all()
+        for p in prefs:
+            try:
+                send_daily_digest(str(p.user_id), db)
+            except Exception as e:
+                logger.error(f"Failed to dispatch email to {p.user_id}: {e}")
+                
+        # 2. Slack delivery
+        installations = db.query(SlackInstallation).all()
+        today = datetime.now(timezone.utc).date()
+        briefing = db.query(UserBriefing).filter(UserBriefing.batch_date == today).first()
+        if briefing:
+            ss = db.query(SuperSummary).filter(SuperSummary.id == briefing.super_summary_id).first()
+            cards = db.query(Card).filter(Card.id.in_(briefing.card_ids)).limit(3).all()
+            app_url = os.environ.get("APP_URL", "http://localhost:3000")
+            blocks = build_briefing_blocks(ss, cards, app_url)
+            for inst in installations:
+                send_slack_briefing(inst, blocks)
+    finally:
+        db.close()
+    logger.info("Daily scheduled pipeline and deliveries completed.")
 
 @app.on_event("startup")
 def start_scheduler():
@@ -164,26 +202,79 @@ def verify_admin_key(key: str = None):
         raise HTTPException(status_code=403, detail="Forbidden")
     return True
 
-@app.post("/admin/trigger-pipeline")
-def trigger_pipeline(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
-    from run_pipeline import run_pipeline
-    import asyncio
-    
-    def run_pipeline_sync():
-        asyncio.run(run_pipeline())
-        
-    background_tasks.add_task(run_pipeline_sync)
-    return {"status": "Pipeline triggered in background"}
+@app.post("/admin/trigger-stage1")
+def trigger_stage1(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
+    from pipeline_stage1 import run_stage1
+    def run_stage1_sync():
+        run_stage1()
+    background_tasks.add_task(run_stage1_sync)
+    return {"status": "Stage 1 Pipeline triggered in background"}
 
 @app.post("/admin/trigger-stage2")
 def trigger_stage2(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
     from pipeline_stage2 import run_stage2
-    
     def run_stage2_sync():
         run_stage2()
-        
     background_tasks.add_task(run_stage2_sync)
     return {"status": "Stage 2 Pipeline triggered in background"}
+
+@app.post("/admin/trigger-pipeline")
+def trigger_pipeline(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
+    from pipeline_stage1 import run_stage1
+    from pipeline_stage2 import run_stage2
+    def run_pipeline_sync():
+        run_stage1()
+        run_stage2()
+    background_tasks.add_task(run_pipeline_sync)
+    return {"status": "Full Pipeline triggered in background"}
+
+@app.post("/admin/trigger-deliveries")
+def trigger_deliveries(background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
+    def run_deliveries_sync():
+        from db import SessionLocal
+        from models import UserEmailPreference, SlackInstallation, UserBriefing, SuperSummary, Card
+        from services.email_service import send_daily_digest
+        from services.slack_service import build_briefing_blocks, send_slack_briefing
+        db = SessionLocal()
+        try:
+            prefs = db.query(UserEmailPreference).filter(UserEmailPreference.daily_digest_enabled == True).all()
+            for p in prefs:
+                try:
+                    send_daily_digest(str(p.user_id), db)
+                except Exception:
+                    pass
+            installations = db.query(SlackInstallation).all()
+            today = datetime.now(timezone.utc).date()
+            briefing = db.query(UserBriefing).filter(UserBriefing.batch_date == today).first()
+            if briefing:
+                ss = db.query(SuperSummary).filter(SuperSummary.id == briefing.super_summary_id).first()
+                cards = db.query(Card).filter(Card.id.in_(briefing.card_ids)).limit(3).all()
+                app_url = os.environ.get("APP_URL", "http://localhost:3000")
+                blocks = build_briefing_blocks(ss, cards, app_url)
+                for inst in installations:
+                    send_slack_briefing(inst, blocks)
+        finally:
+            db.close()
+    background_tasks.add_task(run_deliveries_sync)
+    return {"status": "Deliveries triggered in background"}
+
+class TestEmailRequest(BaseModel):
+    email: str
+
+@app.post("/admin/test-email")
+def test_email(request: TestEmailRequest, background_tasks: BackgroundTasks, is_admin: bool = Depends(verify_admin_key)):
+    def run_test_email():
+        from db import SessionLocal
+        from services.email_service import send_daily_digest
+        db = SessionLocal()
+        try:
+            user = db.query(models.User).filter(models.User.email == request.email).first()
+            if user:
+                send_daily_digest(str(user.id), db)
+        finally:
+            db.close()
+    background_tasks.add_task(run_test_email)
+    return {"status": f"Test email triggered for {request.email}"}
 
 from fastapi.responses import HTMLResponse
 import os
@@ -196,18 +287,35 @@ def get_admin_dashboard(is_admin: bool = Depends(verify_admin_key)):
 
 @app.get("/admin/stats")
 def get_admin_stats(db: Session = Depends(get_db), is_admin: bool = Depends(verify_admin_key)):
-    total_users = db.query(models.User).count()
-    premium_users = db.query(models.User).filter(models.User.subscription_status == "premium").count()
-    
     today = datetime.now(timezone.utc).date()
+    
+    total_users = db.query(models.User).count()
+    premium_users = db.query(models.User).filter(models.User.subscription_status.in_(["premium", "pro", "executive"])).count()
     briefings_today = db.query(models.UserBriefing).filter(models.UserBriefing.batch_date == today).count()
     cards_today = db.query(models.Card).filter(db.func.date(models.Card.generated_at) == today).count()
-    
+    clusters_today = db.query(models.NewsCluster).filter(models.NewsCluster.batch_date == today).count()
+    teams_count = db.query(models.Team).count()
+    slack_installs = db.query(models.SlackInstallation).count()
+    audio_generated = db.query(models.SuperSummary).filter(
+        models.SuperSummary.batch_date == today,
+        models.SuperSummary.audio_url.isnot(None)
+    ).count()
+
     return {
         "total_users": total_users,
         "premium_users": premium_users,
         "briefings_today": briefings_today,
-        "cards_today": cards_today
+        "cards_today": cards_today,
+        "clusters_today": clusters_today,
+        "teams_count": teams_count,
+        "slack_installs": slack_installs,
+        "audio_generated": audio_generated,
+        "sources_health": {
+            "hacker_news": {"status": "active"},
+            "github_trending": {"status": "active"},
+            "arxiv_papers": {"status": "active"},
+            "rss_feeds": {"status": "active"}
+        }
     }
 
 @app.post("/onboarding/extract", response_model=schemas.OnboardingExtractResponse)

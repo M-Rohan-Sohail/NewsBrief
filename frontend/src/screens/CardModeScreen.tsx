@@ -8,7 +8,7 @@ import { useRevenueCat } from '../context/RevenueCatContext';
 type Props = NativeStackScreenProps<RootStackParamList, 'CardMode'>;
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-const API_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8000' : 'http://127.0.0.1:8000';
+import { API_URL } from '../config';
 
 export default function CardModeScreen({ route, navigation }: Props) {
   const { cards } = route.params;
