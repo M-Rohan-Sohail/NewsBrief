@@ -11,6 +11,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (token: string, user_id: string) => Promise<void>;
   signOut: () => Promise<void>;
+  getToken: () => Promise<string | null>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -102,8 +103,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const getToken = async () => {
+    try {
+      return await AsyncStorage.getItem('access_token');
+    } catch (e) {
+      console.error("Failed to get token", e);
+      return null;
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ accessToken, userId, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ accessToken, userId, isLoading, signIn, signOut, getToken }}>
       {children}
     </AuthContext.Provider>
   );

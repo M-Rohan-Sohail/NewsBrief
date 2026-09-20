@@ -45,4 +45,6 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Fix ARQ Slack Task Serialization:** Cast `str(inst.team_id)` and add `if inst.team_id:` guard in `backend/worker.py` (`dispatch_hourly_deliveries_task`).
 - `[x]` **Add Email Briefing Fallback:** Update `backend/services/email_service.py` to fall back to latest briefing if today's batch is not yet generated.
 - `[x]` **Deduplicate Test Client Setup:** Remove duplicated test client setup lines in `backend/tests/test_admin_endpoints.py`.
+- `[x]` **Align Token Access in AuthContext & FeedbackModal:** Expose `getToken` in `frontend/src/context/AuthContext.tsx` and ensure `frontend/src/components/FeedbackModal.tsx` retrieves token without runtime `TypeError`.
 - `[x]` **Verification:** Run `python3 -m py_compile` across all backend modules and verify zero syntax errors.
+

@@ -238,9 +238,22 @@ This ensures `/admin/test-email` and manual previews always deliver a sample ema
 ### 6.4 Clean Duplicate Setup in Tests (`backend/tests/test_admin_endpoints.py`)
 In `backend/tests/test_admin_endpoints.py`, remove the redundant lines 21–29 that duplicate `client = TestClient(app)` and `app.dependency_overrides[get_db] = override_get_db`.
 
+### 6.5 Align Token Access in AuthContext & FeedbackModal (`frontend/src/context/AuthContext.tsx` & `frontend/src/components/FeedbackModal.tsx`)
+In `frontend/src/components/FeedbackModal.tsx`, the component attempts to invoke `const { getToken } = useAuth(); await getToken();`, but `AuthContext.tsx` only exposes `{ accessToken, userId, isLoading, signIn, signOut }`, resulting in a runtime crash `TypeError: getToken is not a function`.
+
+**Required Fix:**
+1. In `frontend/src/context/AuthContext.tsx`:
+   - Extend `AuthContextType` with `getToken: () => Promise<string | null>;`.
+   - Implement `const getToken = async () => accessToken || (await AsyncStorage.getItem('access_token'));`.
+   - Pass `getToken` into `<AuthContext.Provider value={{ accessToken, userId, isLoading, signIn, signOut, getToken }}>`.
+2. In `frontend/src/components/FeedbackModal.tsx`:
+   - Consume `{ accessToken, getToken } = useAuth();`.
+   - Use `accessToken || (await getToken())` for API request Authorization headers (`Bearer ${token}`).
+
 ---
 
 ## 7. Execution Instructions for Antigravity IDE
+
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.
