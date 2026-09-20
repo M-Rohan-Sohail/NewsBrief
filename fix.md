@@ -196,10 +196,55 @@ Create a modal component allowing users to:
 
 ---
 
-## 6. Execution Instructions for Antigravity IDE
+## 6. Phase 5: Pre-Beta Polish & Hardening
+
+### 6.1 Purge Broken Native Import (`frontend/src/context/RevenueCatContext.tsx`)
+Remove the unused import from `frontend/src/context/RevenueCatContext.tsx`:
+```typescript
+import Purchases, { PurchasesPackage } from 'react-native-purchases';
+```
+Since `react-native-purchases` is not installed in `package.json` (mock types are used instead), retaining this import causes Metro bundler to fail during `npx expo start` with `Unable to resolve module 'react-native-purchases'`.
+
+### 6.2 ARQ Task Serialization & Null Safety (`backend/worker.py`)
+In `dispatch_hourly_deliveries_task` in `backend/worker.py`, ensure Slack briefing tasks safely handle UUID serialization and unassigned teams:
+```python
+        # Slack deliveries
+        installations = db.query(SlackInstallation).all()
+        for inst in installations:
+            try:
+                if inst.team_id:
+                    await ctx['redis'].enqueue_job('post_slack_briefing_task', str(inst.team_id))
+            except Exception as e:
+                logger.error(f"Failed to enqueue slack briefing for {inst.team_id}: {e}")
+```
+ARQ's msgpack serializer cannot serialize raw Python `uuid.UUID` objects. Casting to `str(inst.team_id)` and verifying `inst.team_id` is not `None` prevents unhandled serialization exceptions.
+
+### 6.3 Graceful Briefing Fallback for Digest Previews (`backend/services/email_service.py`)
+In `send_daily_digest` (`backend/services/email_service.py`), fall back to the most recent user briefing if today's batch has not yet generated:
+```python
+    # Fetch User Briefing (today or latest available fallback)
+    briefing = db.query(UserBriefing).filter(
+        UserBriefing.user_id == user.id,
+        UserBriefing.batch_date == today
+    ).first()
+    
+    if not briefing:
+        briefing = db.query(UserBriefing).filter(
+            UserBriefing.user_id == user.id
+        ).order_by(UserBriefing.batch_date.desc()).first()
+```
+This ensures `/admin/test-email` and manual previews always deliver a sample email without requiring the 3:00 AM nightly cron batch to have already executed.
+
+### 6.4 Clean Duplicate Setup in Tests (`backend/tests/test_admin_endpoints.py`)
+In `backend/tests/test_admin_endpoints.py`, remove the redundant lines 21–29 that duplicate `client = TestClient(app)` and `app.dependency_overrides[get_db] = override_get_db`.
+
+---
+
+## 7. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.
 2. Apply the code modifications.
 3. Run the designated verification command.
 4. Mark the task as completed `[x]` in `fix_progress.md`.
+

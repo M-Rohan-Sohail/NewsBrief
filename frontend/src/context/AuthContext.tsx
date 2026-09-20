@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
 import { API_URL } from '../config';
+import { analytics } from '../services/analytics';
 
 type AuthContextType = {
   accessToken: string | null;
@@ -62,6 +63,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserId(storedUserId);
           // Try to register for push on startup if logged in
           registerForPushNotificationsAsync(storedToken);
+          
+          analytics.init(async () => await AsyncStorage.getItem('access_token'));
         }
       } catch (e) {
         console.error("Failed to load token", e);
@@ -81,6 +84,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Register for push after sign in
       registerForPushNotificationsAsync(token);
+      
+      analytics.init(async () => token);
     } catch (e) {
       console.error("Failed to save token", e);
     }

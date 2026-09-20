@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import Purchases, { PurchasesPackage } from 'react-native-purchases';
+
 import { useAuth } from './AuthContext';
 import { API_URL } from '../config';
 

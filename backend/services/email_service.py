@@ -15,10 +15,14 @@ FROM_EMAIL = os.environ.get("FROM_EMAIL", "onboarding@resend.dev")
 if RESEND_API_KEY:
     resend.api_key = RESEND_API_KEY
 
-def build_cards_html(cards: list[Card], app_url: str) -> str:
+def build_cards_html(cards: list[Card], app_url: str, user_id: str) -> str:
     """
     Generate the HTML snippet for a list of cards.
     """
+    api_url = os.environ.get("API_URL", "http://localhost:8000")
+    if api_url.endswith("/"):
+        api_url = api_url[:-1]
+    
     html = ""
     for card in cards:
         bullets_html = "".join([f"<li>{b}</li>" for b in card.bullets])
@@ -30,7 +34,7 @@ def build_cards_html(cards: list[Card], app_url: str) -> str:
             </ul>
             <div class="card-meta">Source: <a href="{card.source_url}">{card.source_name}</a></div>
             <div class="btn-group">
-                <a href="{app_url}/deep-dive/{card.cluster_id}" class="btn btn-secondary">Read Deep Dive</a>
+                <a href="{api_url}/analytics/email-click/{user_id}/{card.cluster_id}" class="btn btn-secondary">Read Deep Dive</a>
             </div>
         </div>
         """
@@ -54,7 +58,12 @@ def send_daily_digest(user_id: str, db: Session, mock_mode: bool = False) -> boo
     ).first()
     
     if not briefing:
-        logger.warning(f"No briefing found for user {user.email} today")
+        briefing = db.query(UserBriefing).filter(
+            UserBriefing.user_id == user.id
+        ).order_by(UserBriefing.batch_date.desc()).first()
+        
+    if not briefing:
+        logger.warning(f"No briefing found for user {user.email}")
         return False
         
     super_summary = db.query(SuperSummary).filter(SuperSummary.id == briefing.super_summary_id).first()
@@ -78,8 +87,20 @@ def send_daily_digest(user_id: str, db: Session, mock_mode: bool = False) -> boo
     html_content = html_content.replace("[[SUPER_SYNTHESIS]]", super_summary.synthesis)
     html_content = html_content.replace("[[APP_URL]]", app_url)
     
-    cards_html = build_cards_html(cards, app_url)
+    cards_html = build_cards_html(cards, app_url, str(user.id))
     html_content = html_content.replace("[[CARDS_HTML]]", cards_html)
+    
+    api_url = os.environ.get("API_URL", "http://localhost:8000")
+    if api_url.endswith("/"):
+        api_url = api_url[:-1]
+        
+    pixel_url = f"{api_url}/analytics/email-open/{user.id}/{today}"
+    pixel_html = f'<img src="{pixel_url}" width="1" height="1" style="display:none;" />'
+    
+    if "</body>" in html_content:
+        html_content = html_content.replace("</body>", f"{pixel_html}\n</body>")
+    else:
+        html_content += pixel_html
     
     logger.info(f"Sending email digest to {user.email}...")
     

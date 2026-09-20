@@ -71,3 +71,27 @@ class UpdateEmailPreferenceRequest(BaseModel):
 class AudioResponse(BaseModel):
     audio_url: Optional[str]
     status: str
+
+class FeedbackCreate(BaseModel):
+    title: str
+    description: str
+    category: str = "feature"
+
+class FeedbackResponse(BaseModel):
+    id: str
+    user_id: str
+    title: str
+    description: str
+    category: str
+    status: str
+    upvotes_count: int
+    has_upvoted: bool = False
+    created_at: datetime
+
+class FeedbackStatusUpdate(BaseModel):
+    status: str
+
+class AnalyticsEventCreate(BaseModel):
+    channel: str
+    event_name: str
+    properties: Optional[dict] = None

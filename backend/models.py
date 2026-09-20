@@ -141,4 +141,57 @@ class CardViewLog(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), index=True)
     card_id = Column(UUID(as_uuid=True))
-    viewed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    viewed_at = Column(DateTime(timezone=True))
+
+import enum
+from datetime import datetime, timezone
+from sqlalchemy import JSON
+
+class FeedbackCategory(str, enum.Enum):
+    FEATURE = "feature"
+    IMPROVEMENT = "improvement"
+    BUG = "bug"
+    SOURCE = "source"
+    GENERAL = "general"
+
+class FeedbackStatus(str, enum.Enum):
+    UNDER_REVIEW = "under_review"
+    PLANNED = "planned"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    DECLINED = "declined"
+
+class BetaFeedback(Base):
+    __tablename__ = "beta_feedbacks"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(150), nullable=False)
+    description = Column(String(1000), nullable=False)
+    category = Column(String(30), nullable=False, default="feature")
+    status = Column(String(30), nullable=False, default="under_review")
+    upvotes_count = Column(Integer, nullable=False, default=1)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+class FeedbackVote(Base):
+    __tablename__ = "feedback_votes"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    feedback_id = Column(UUID(as_uuid=True), ForeignKey("beta_feedbacks.id", ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    
+    __table_args__ = (
+        UniqueConstraint("user_id", "feedback_id", name="uq_user_feedback_vote"),
+    )
+
+class UserEventLog(Base):
+    __tablename__ = "user_event_logs"
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    channel = Column(String(30), nullable=False, index=True)
+    event_name = Column(String(50), nullable=False, index=True)
+    properties = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False, index=True)

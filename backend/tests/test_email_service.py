@@ -12,13 +12,13 @@ def test_build_cards_html():
     card1.source_url = "https://techcrunch.com"
     card1.cluster_id = "123"
     
-    html = build_cards_html([card1], "http://localhost:3000")
+    html = build_cards_html([card1], "http://localhost:3000", "user123")
     
     assert "Test Headline" in html
     assert "<li>Bullet 1</li>" in html
     assert "TechCrunch" in html
     assert "href=\"https://techcrunch.com\"" in html
-    assert "href=\"http://localhost:3000/deep-dive/123\"" in html
+    assert "email-click/user123/123" in html
 
 @patch("services.email_service.resend.Emails.send")
 def test_send_daily_digest_mocked(mock_resend_send):

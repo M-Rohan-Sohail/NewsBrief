@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Audio } from 'expo-av';
+import { analytics } from '../services/analytics';
 
 interface AudioPlayerProps {
     url: string;
@@ -34,6 +35,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ url }) => {
                             setPosition(status.positionMillis);
                             setDuration(status.durationMillis || 0);
                             setIsPlaying(status.isPlaying);
+                            
+                            if (status.didJustFinish) {
+                                analytics.logEvent('audio', 'audio_complete', { url });
+                            }
                         }
                     }
                 );
@@ -72,6 +77,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ url }) => {
             await sound.pauseAsync();
         } else {
             await sound.playAsync();
+            analytics.logEvent('audio', 'audio_play', { url });
         }
     };
     

@@ -23,40 +23,64 @@
         </header>
 
         <section class="mb-12">
-            <h2 class="text-2xl font-bold mb-6 text-gray-200">Global Telemetry</h2>
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <h2 class="text-2xl font-bold mb-6 text-gray-200">Beta Launch Analytics</h2>
+            
+            <h3 class="text-xl font-semibold mb-4 text-gray-300">Funnel & DAU</h3>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <!-- Stat Cards -->
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Total Users</p>
-                    <p class="text-4xl font-black mt-2" id="stat-users">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg border-t-4 border-t-yellow-500">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Premium Users</p>
-                    <p class="text-4xl font-black mt-2 text-yellow-400" id="stat-premium">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Teams</p>
-                    <p class="text-4xl font-black mt-2 text-blue-400" id="stat-teams">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Slack Installs</p>
-                    <p class="text-4xl font-black mt-2 text-purple-400" id="stat-slack">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Briefings Today</p>
-                    <p class="text-4xl font-black mt-2" id="stat-briefings">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Cards Today</p>
-                    <p class="text-4xl font-black mt-2" id="stat-cards">-</p>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Clusters Today</p>
-                    <p class="text-4xl font-black mt-2" id="stat-clusters">-</p>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg border-t-4 border-t-blue-500">
+                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Total Testers</p>
+                    <p class="text-4xl font-black mt-2 text-blue-400" id="stat-total-users">-</p>
                 </div>
                 <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg border-t-4 border-t-green-500">
-                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Audio Generated</p>
-                    <p class="text-4xl font-black mt-2 text-green-400" id="stat-audio">-</p>
+                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Active Today</p>
+                    <p class="text-4xl font-black mt-2 text-green-400" id="stat-active-today">-</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg border-t-4 border-t-purple-500">
+                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">DAU %</p>
+                    <p class="text-4xl font-black mt-2 text-purple-400" id="stat-dau-pct">-</p>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg border-t-4 border-t-yellow-500">
+                    <p class="text-sm text-gray-400 uppercase tracking-wide font-semibold">Avg Session Time</p>
+                    <p class="text-4xl font-black mt-2 text-yellow-400" id="stat-avg-session">-</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                <!-- Channel Engagement -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-300">Channel Engagement</h3>
+                    <div id="channel-bars" class="space-y-6">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+
+                <!-- Primary Preference -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h3 class="text-xl font-semibold mb-6 text-gray-300">Primary Channel Preference</h3>
+                    <div class="grid grid-cols-2 gap-4" id="channel-preference">
+                        <!-- Filled by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Activity Feed -->
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                <h3 class="text-xl font-semibold mb-6 text-gray-300">Live Activity Feed</h3>
+                <div class="overflow-hidden bg-gray-900 rounded-lg">
+                    <table class="min-w-full divide-y divide-gray-700">
+                        <thead class="bg-gray-800">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Time</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">User</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Channel</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Event</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-feed" class="divide-y divide-gray-800">
+                            <!-- Filled by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </section>
@@ -83,7 +107,7 @@
             </div>
         </section>
 
-        <section class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-lg">
+        <section class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-lg mb-12">
             <h2 class="text-2xl font-bold mb-6 text-gray-200">Pipeline & Delivery Controls</h2>
             
             <div id="status-msg" class="mb-6 hidden p-4 rounded-lg font-bold text-center"></div>
@@ -113,6 +137,13 @@
                 </div>
             </div>
         </section>
+        
+        <section class="bg-gray-800 p-8 rounded-xl border border-gray-700 shadow-lg">
+            <h2 class="text-2xl font-bold mb-6 text-gray-200">Beta Feedback Board</h2>
+            <div id="feedback-list" class="space-y-4">
+                <p class="text-gray-400 italic">Loading feedback...</p>
+            </div>
+        </section>
     </div>
 
     <script>
@@ -121,35 +152,80 @@
 
         async function fetchStats() {
             try {
+                // Fetch existing basic stats
                 const response = await fetch(`/admin/stats?key=${secretKey}`);
-                if (!response.ok) throw new Error("Unauthorized");
-                
-                const data = await response.json();
-                
-                document.getElementById('stat-users').innerText = data.total_users;
-                document.getElementById('stat-premium').innerText = data.premium_users;
-                document.getElementById('stat-briefings').innerText = data.briefings_today;
-                document.getElementById('stat-cards').innerText = data.cards_today;
-                document.getElementById('stat-clusters').innerText = data.clusters_today || 0;
-                document.getElementById('stat-teams').innerText = data.teams_count || 0;
-                document.getElementById('stat-slack').innerText = data.slack_installs || 0;
-                document.getElementById('stat-audio').innerText = data.audio_generated || 0;
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.sources_health) {
+                        ['hn', 'gh', 'arxiv', 'rss'].forEach(src => {
+                            const el = document.getElementById(`health-${src}`);
+                            const keyMap = {'hn': 'hacker_news', 'gh': 'github_trending', 'arxiv': 'arxiv_papers', 'rss': 'rss_feeds'};
+                            const st = data.sources_health[keyMap[src]].status;
+                            el.innerText = st.toUpperCase();
+                            if (st === 'active') {
+                                el.className = "px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full";
+                            } else {
+                                el.className = "px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full";
+                            }
+                        });
+                    }
+                }
 
-                if (data.sources_health) {
-                    ['hn', 'gh', 'arxiv', 'rss'].forEach(src => {
-                        const el = document.getElementById(`health-${src}`);
-                        const keyMap = {'hn': 'hacker_news', 'gh': 'github_trending', 'arxiv': 'arxiv_papers', 'rss': 'rss_feeds'};
-                        const st = data.sources_health[keyMap[src]].status;
-                        el.innerText = st.toUpperCase();
-                        if (st === 'active') {
-                            el.className = "px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full";
-                        } else {
-                            el.className = "px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full";
-                        }
-                    });
+                // Fetch new Analytics
+                const analyticsRes = await fetch(`/admin/analytics?key=${secretKey}`);
+                if (analyticsRes.ok) {
+                    const data = await analyticsRes.json();
+                    
+                    document.getElementById('stat-total-users').innerText = data.total_users;
+                    document.getElementById('stat-active-today').innerText = data.active_users_today;
+                    document.getElementById('stat-dau-pct').innerText = `${data.dau_percentage}%`;
+                    document.getElementById('stat-avg-session').innerText = `${data.avg_session_seconds}s`;
+
+                    // Render Channel Engagement
+                    const cb = document.getElementById('channel-bars');
+                    cb.innerHTML = '';
+                    const colors = { app: 'bg-blue-500', email: 'bg-red-500', audio: 'bg-green-500', slack: 'bg-purple-500' };
+                    for (const [ch, info] of Object.entries(data.channel_breakdown)) {
+                        cb.innerHTML += `
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <span class="text-sm font-medium text-white uppercase">${ch}</span>
+                                    <span class="text-sm font-medium text-white">${info.percentage}% (${info.users_count} users)</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-2.5">
+                                    <div class="${colors[ch] || 'bg-gray-400'} h-2.5 rounded-full" style="width: ${info.percentage}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // Render Channel Preference
+                    const cp = document.getElementById('channel-preference');
+                    cp.innerHTML = '';
+                    for (const [key, count] of Object.entries(data.channel_dominance_summary)) {
+                        const ch = key.replace('_primary', '');
+                        cp.innerHTML += `
+                            <div class="bg-gray-900 p-4 rounded border border-gray-700 text-center">
+                                <p class="text-gray-400 text-xs uppercase font-bold mb-1">${ch}</p>
+                                <p class="text-2xl font-black text-white">${count}</p>
+                            </div>
+                        `;
+                    }
+
+                    // Render Activity Feed
+                    const af = document.getElementById('activity-feed');
+                    af.innerHTML = data.recent_activity.map(a => `
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400">${new Date(a.time).toLocaleTimeString()}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-200">${a.user_email}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-400 uppercase">${a.channel}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-300 font-mono">${a.event_name}</td>
+                        </tr>
+                    `).join('');
                 }
             } catch (error) {
-                showStatus("Unauthorized or failed to load stats.", "error");
+                console.error(error);
+                showStatus("Failed to load stats.", "error");
             }
         }
 
@@ -199,7 +275,63 @@
             }
         }
 
+        async function fetchFeedback() {
+            try {
+                const res = await fetch(`/admin/feedback?key=${secretKey}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    const container = document.getElementById('feedback-list');
+                    if (data.length === 0) {
+                        container.innerHTML = '<p class="text-gray-400 italic">No feedback yet.</p>';
+                        return;
+                    }
+                    container.innerHTML = data.map(f => `
+                        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 flex justify-between items-start">
+                            <div class="flex-1">
+                                <div class="flex items-center space-x-3 mb-2">
+                                    <span class="bg-blue-900 text-blue-200 text-xs px-2 py-1 rounded font-bold uppercase">${f.category}</span>
+                                    <span class="text-gray-400 text-sm font-semibold">▲ ${f.upvotes_count}</span>
+                                </div>
+                                <h4 class="text-lg font-bold text-white mb-1">${f.title}</h4>
+                                <p class="text-gray-400 text-sm mb-3">${f.description}</p>
+                            </div>
+                            <div class="ml-4 flex flex-col items-end">
+                                <label class="text-xs text-gray-500 mb-1">Status</label>
+                                <select onchange="updateFeedbackStatus('${f.id}', this.value)" class="bg-gray-800 border border-gray-600 text-white text-sm rounded focus:ring-blue-500 focus:border-blue-500 block p-2">
+                                    <option value="under_review" ${f.status === 'under_review' ? 'selected' : ''}>Under Review</option>
+                                    <option value="planned" ${f.status === 'planned' ? 'selected' : ''}>Planned</option>
+                                    <option value="completed" ${f.status === 'completed' ? 'selected' : ''}>Completed</option>
+                                    <option value="declined" ${f.status === 'declined' ? 'selected' : ''}>Declined</option>
+                                </select>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error("Failed to load feedback", e);
+            }
+        }
+
+        async function updateFeedbackStatus(id, newStatus) {
+            try {
+                const res = await fetch(`/admin/feedback/${id}/status?key=${secretKey}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (res.ok) {
+                    showStatus("Status updated successfully", "success");
+                } else {
+                    showStatus("Failed to update status", "error");
+                    fetchFeedback(); // reset
+                }
+            } catch (e) {
+                showStatus("Error updating status", "error");
+            }
+        }
+
         fetchStats();
+        fetchFeedback();
     </script>
 </body>
 </html>

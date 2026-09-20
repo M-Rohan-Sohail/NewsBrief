@@ -37,3 +37,12 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Create Email Preferences Modal:** Build `frontend/src/components/EmailPreferencesModal.tsx` to read (`GET`) and update (`PUT`) `/users/me/email-preferences` (fields: `daily_digest_enabled`, `delivery_time`).
 - `[x]` **Integrate Modal:** Add an "Email Settings" button (gear icon) in `frontend/src/screens/HomeScreen.tsx` header to trigger the `EmailPreferencesModal`.
 - `[x]` **Verification:** Run `npm test` or start Expo to verify clean compilation with no hardcoded URLs or broken imports.
+
+---
+
+## Phase 5: Pre-Beta Polish & Hardening
+- `[x]` **Purge Broken Native Import:** Remove `import Purchases, { PurchasesPackage } from 'react-native-purchases';` from `frontend/src/context/RevenueCatContext.tsx`.
+- `[x]` **Fix ARQ Slack Task Serialization:** Cast `str(inst.team_id)` and add `if inst.team_id:` guard in `backend/worker.py` (`dispatch_hourly_deliveries_task`).
+- `[x]` **Add Email Briefing Fallback:** Update `backend/services/email_service.py` to fall back to latest briefing if today's batch is not yet generated.
+- `[x]` **Deduplicate Test Client Setup:** Remove duplicated test client setup lines in `backend/tests/test_admin_endpoints.py`.
+- `[x]` **Verification:** Run `python3 -m py_compile` across all backend modules and verify zero syntax errors.

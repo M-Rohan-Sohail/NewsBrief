@@ -28,7 +28,12 @@ import asyncio
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "dummy_google_client_id.apps.googleusercontent.com")
 
 from routers.slack_router import slack_router
+from routers.feedback_router import router as feedback_router
+from routers.analytics_router import router as analytics_router
+
 app.include_router(slack_router)
+app.include_router(feedback_router)
+app.include_router(analytics_router)
 
 scheduler = BackgroundScheduler()
 
@@ -275,6 +280,122 @@ def test_email(request: TestEmailRequest, background_tasks: BackgroundTasks, is_
             db.close()
     background_tasks.add_task(run_test_email)
     return {"status": f"Test email triggered for {request.email}"}
+
+@app.get("/admin/feedback")
+def admin_get_feedback(db: Session = Depends(get_db), is_admin: bool = Depends(verify_admin_key)):
+    from sqlalchemy import desc
+    feedbacks = db.query(models.BetaFeedback).order_by(desc(models.BetaFeedback.upvotes_count)).all()
+    return [{
+        "id": str(f.id),
+        "title": f.title,
+        "description": f.description,
+        "category": f.category,
+        "status": f.status,
+        "upvotes_count": f.upvotes_count,
+        "created_at": f.created_at
+    } for f in feedbacks]
+
+@app.get("/admin/analytics")
+def get_analytics(db: Session = Depends(get_db), is_admin: bool = Depends(verify_admin_key)):
+    today = datetime.now(timezone.utc).date()
+    start_of_today = datetime(today.year, today.month, today.day, tzinfo=timezone.utc)
+    
+    total_users = db.query(models.User).count()
+    if total_users == 0:
+        return {"error": "No users"}
+        
+    active_users = db.query(models.UserEventLog.user_id).filter(
+        models.UserEventLog.created_at >= start_of_today,
+        models.UserEventLog.user_id.isnot(None)
+    ).distinct().count()
+    
+    # Calculate avg session time
+    sessions = db.query(models.UserEventLog).filter(
+        models.UserEventLog.event_name == "app_session",
+        models.UserEventLog.properties.isnot(None)
+    ).all()
+    
+    total_session_time = 0
+    valid_sessions = 0
+    for s in sessions:
+        if isinstance(s.properties, dict) and "session_seconds" in s.properties:
+            total_session_time += s.properties["session_seconds"]
+            valid_sessions += 1
+    
+    avg_session = int(total_session_time / valid_sessions) if valid_sessions > 0 else 0
+    
+    # Channel breakdown
+    channels = ["app", "email", "audio", "slack"]
+    breakdown = {}
+    
+    for ch in channels:
+        ch_users = db.query(models.UserEventLog.user_id).filter(
+            models.UserEventLog.channel == ch,
+            models.UserEventLog.user_id.isnot(None)
+        ).distinct().count()
+        ch_events = db.query(models.UserEventLog).filter(models.UserEventLog.channel == ch).count()
+        breakdown[ch] = {
+            "users_count": ch_users,
+            "percentage": round((ch_users / total_users) * 100, 1) if total_users > 0 else 0,
+            "total_events": ch_events
+        }
+        
+    # Channel dominance (naive estimation for demo: each user's max channel)
+    # Get counts per user per channel
+    from sqlalchemy import text
+    user_channel_counts = db.execute(
+        text("SELECT user_id, channel, count(*) as cnt FROM user_event_logs WHERE user_id IS NOT NULL GROUP BY user_id, channel")
+    ).fetchall()
+    
+    dom = {}
+    from collections import defaultdict
+    user_max = defaultdict(lambda: {"channel": None, "cnt": 0})
+    for r in user_channel_counts:
+        uid, ch, cnt = r[0], r[1], r[2]
+        if cnt > user_max[uid]["cnt"]:
+            user_max[uid] = {"channel": ch, "cnt": cnt}
+            
+    dominance = {"app_primary": 0, "email_primary": 0, "audio_primary": 0, "slack_primary": 0}
+    for uid, data in user_max.items():
+        if data["channel"]:
+            dominance[f"{data['channel']}_primary"] += 1
+
+    # Recent activity
+    from sqlalchemy import desc
+    recent = db.query(models.UserEventLog).filter(models.UserEventLog.user_id.isnot(None)).order_by(desc(models.UserEventLog.created_at)).limit(20).all()
+    activity = []
+    for r in recent:
+        user = db.query(models.User).filter(models.User.id == r.user_id).first()
+        activity.append({
+            "user_email": user.email if user else "Unknown",
+            "channel": r.channel,
+            "event_name": r.event_name,
+            "time": r.created_at.isoformat()
+        })
+
+    return {
+        "total_users": total_users,
+        "active_users_today": active_users,
+        "dau_percentage": round((active_users / total_users) * 100, 1) if total_users > 0 else 0,
+        "avg_session_seconds": avg_session,
+        "channel_breakdown": breakdown,
+        "channel_dominance_summary": dominance,
+        "recent_activity": activity
+    }
+
+@app.patch("/admin/feedback/{feedback_id}/status")
+def admin_update_feedback_status(
+    feedback_id: str,
+    payload: schemas.FeedbackStatusUpdate,
+    db: Session = Depends(get_db),
+    is_admin: bool = Depends(verify_admin_key)
+):
+    feedback = db.query(models.BetaFeedback).filter(models.BetaFeedback.id == feedback_id).first()
+    if not feedback:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    feedback.status = payload.status
+    db.commit()
+    return {"status": "success", "new_status": feedback.status}
 
 from fastapi.responses import HTMLResponse
 import os

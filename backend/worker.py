@@ -70,7 +70,8 @@ async def dispatch_hourly_deliveries_task(ctx):
         installations = db.query(SlackInstallation).all()
         for inst in installations:
             try:
-                await ctx['redis'].enqueue_job('post_slack_briefing_task', inst.team_id)
+                if inst.team_id:
+                    await ctx['redis'].enqueue_job('post_slack_briefing_task', str(inst.team_id))
             except Exception as e:
                 logger.error(f"Failed to enqueue slack briefing for {inst.team_id}: {e}")
     finally:

@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { useRevenueCat } from '../context/RevenueCatContext';
 import { AudioPlayer } from '../components/AudioPlayer';
 import { EmailPreferencesModal } from '../components/EmailPreferencesModal';
+import { FeedbackModal } from '../components/FeedbackModal';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { API_URL } from '../config';
@@ -24,6 +25,7 @@ export default function HomeScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
+  const [isFeedbackModalVisible, setIsFeedbackModalVisible] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -134,6 +136,9 @@ export default function HomeScreen({ navigation }: Props) {
                {new Date(briefing.batch_date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
             </Text>
             <View style={{flexDirection: 'row', alignItems: 'center'}}>
+              <TouchableOpacity onPress={() => setIsFeedbackModalVisible(true)} style={{marginRight: 16}}>
+                <Text style={{color: '#94A3B8', fontSize: 20}}>💡</Text>
+              </TouchableOpacity>
               <TouchableOpacity onPress={() => setIsEmailModalVisible(true)} style={{marginRight: 16}}>
                 <Text style={{color: '#94A3B8', fontSize: 20}}>⚙️</Text>
               </TouchableOpacity>
@@ -144,6 +149,7 @@ export default function HomeScreen({ navigation }: Props) {
           </View>
     
           <EmailPreferencesModal visible={isEmailModalVisible} onClose={() => setIsEmailModalVisible(false)} />
+          <FeedbackModal visible={isFeedbackModalVisible} onClose={() => setIsFeedbackModalVisible(false)} />
           <Text style={styles.greeting}>Your Daily Briefing</Text>
           
           {briefing.is_preparing_today && (

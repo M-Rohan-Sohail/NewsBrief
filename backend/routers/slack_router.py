@@ -96,3 +96,30 @@ def slack_oauth_callback(code: str, state: str = None, db: Session = Depends(get
     db.commit()
     
     return {"status": "Success", "message": "NewsBrief Slack bot installed!"}
+
+@slack_router.post("/actions")
+async def slack_actions(request: Request, db: Session = Depends(get_db)):
+    form_data = await request.form()
+    payload_str = form_data.get("payload")
+    if not payload_str:
+        return {"status": "error"}
+        
+    import json
+    from models import UserEventLog
+    
+    try:
+        payload = json.loads(payload_str)
+        user_id = payload.get("user", {}).get("id", "unknown_slack_user")
+        
+        # Log the slack click event
+        event = UserEventLog(
+            channel="slack",
+            event_name="slack_click",
+            properties={"slack_user_id": user_id, "action_details": payload.get("actions", [])}
+        )
+        db.add(event)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Failed to process slack action: {e}")
+        
+    return {"status": "ok"}

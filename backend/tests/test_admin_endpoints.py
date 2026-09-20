@@ -18,15 +18,7 @@ app.dependency_overrides[get_db] = override_get_db
 patcher = patch.object(BackgroundTasks, 'add_task')
 patcher.start()
 
-client = TestClient(app)
 
-def override_get_db():
-    mock_db = MagicMock()
-    mock_db.query.return_value.count.return_value = 0
-    mock_db.query.return_value.filter.return_value.count.return_value = 0
-    yield mock_db
-
-app.dependency_overrides[get_db] = override_get_db
 
 def test_get_admin_dashboard_no_auth():
     response = client.get("/admin")
