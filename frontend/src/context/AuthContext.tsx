@@ -22,34 +22,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
 
   const registerForPushNotificationsAsync = async (token: string) => {
-    try {
-      const { status: existingStatus } = await import('expo-notifications').then(m => m.getPermissionsAsync());
-      let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
-        const { status } = await import('expo-notifications').then(m => m.requestPermissionsAsync());
-        finalStatus = status;
-      }
-      
-      if (finalStatus !== 'granted') {
-        return;
-      }
-      
-      const pushToken = await import('expo-notifications').then(m => m.getExpoPushTokenAsync());
-      
-      if (pushToken.data) {
-        await fetch(`${API_URL}/users/push-token`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ token: pushToken.data })
-        });
-      }
-    } catch (error) {
-      console.log("Push notification registration failed (expected if expo-notifications not installed or on web):", error);
-    }
+    // Note: expo-notifications is not bundled in this preview APK.
+    // When push notification credentials are configured, install expo-notifications.
+    return;
   };
 
   useEffect(() => {
