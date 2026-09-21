@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Audio } from 'expo-av';
+import { useAudioPlayer, useAudioPlayerStatus } from 'expo-audio';
 import { analytics } from '../services/analytics';
 
 interface AudioPlayerProps {
@@ -8,100 +8,53 @@ interface AudioPlayerProps {
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({ url }) => {
-    const [sound, setSound] = useState<Audio.Sound | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [position, setPosition] = useState(0);
-    const [duration, setDuration] = useState(0);
-    
+    const player = useAudioPlayer(url);
+    const status = useAudioPlayerStatus(player);
+
     useEffect(() => {
-        let isMounted = true;
-        let localSound: Audio.Sound | null = null;
-        
-        async function loadAudio() {
-            try {
-                setIsLoading(true);
-                // Configure audio session for background playback and silent switch on iOS
-                await Audio.setAudioModeAsync({
-                    playsInSilentModeIOS: true,
-                    staysActiveInBackground: true,
-                });
-                
-                const { sound: audioSound } = await Audio.Sound.createAsync(
-                    { uri: url },
-                    { shouldPlay: false },
-                    (status) => {
-                        if (status.isLoaded) {
-                            setPosition(status.positionMillis);
-                            setDuration(status.durationMillis || 0);
-                            setIsPlaying(status.isPlaying);
-                            
-                            if (status.didJustFinish) {
-                                analytics.logEvent('audio', 'audio_complete', { url });
-                            }
-                        }
-                    }
-                );
-                
-                if (isMounted) {
-                    localSound = audioSound;
-                    setSound(audioSound);
-                } else {
-                    audioSound.unloadAsync();
-                }
-            } catch (error) {
-                console.error("Error loading audio:", error);
-            } finally {
-                if (isMounted) {
-                    setIsLoading(false);
-                }
-            }
+        if (status.didJustFinish) {
+            analytics.logEvent('audio', 'audio_complete', { url });
         }
-        
-        loadAudio();
-        
-        return () => {
-            isMounted = false;
-            if (localSound) {
-                localSound.unloadAsync();
-            } else if (sound) {
-                sound.unloadAsync();
-            }
-        };
-    }, [url]);
-    
-    const handlePlayPause = async () => {
-        if (!sound) return;
-        
-        if (isPlaying) {
-            await sound.pauseAsync();
+    }, [status.didJustFinish, url]);
+
+    const handlePlayPause = () => {
+        if (!player) return;
+
+        if (status.playing) {
+            player.pause();
         } else {
-            await sound.playAsync();
+            if (status.currentTime >= status.duration && status.duration > 0) {
+                player.seekTo(0);
+            }
+            player.play();
             analytics.logEvent('audio', 'audio_play', { url });
         }
     };
-    
-    const formatTime = (millis: number) => {
-        const totalSeconds = Math.floor(millis / 1000);
+
+    const formatTime = (seconds: number) => {
+        const totalSeconds = Math.floor(seconds || 0);
         const minutes = Math.floor(totalSeconds / 60);
-        const seconds = totalSeconds % 60;
-        return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        const remainingSeconds = totalSeconds % 60;
+        return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
     };
-    
-    const progressPercent = duration > 0 ? (position / duration) * 100 : 0;
-    
+
+    const currentTime = status.currentTime || 0;
+    const duration = status.duration || 0;
+    const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+    const isLoading = !status.isLoaded && status.isBuffering;
+
     return (
         <View style={styles.container}>
             <View style={styles.controls}>
                 <TouchableOpacity style={styles.playButton} onPress={handlePlayPause} disabled={isLoading}>
                     {isLoading ? (
-                        <ActivityIndicator color="#fff" />
+                        <ActivityIndicator color="#0f172a" />
                     ) : (
-                        <Text style={styles.playButtonText}>{isPlaying ? 'Pause' : 'Play'}</Text>
+                        <Text style={styles.playButtonText}>{status.playing ? 'Pause' : 'Play'}</Text>
                     )}
                 </TouchableOpacity>
                 <View style={styles.progressContainer}>
-                    <Text style={styles.timeText}>{formatTime(position)}</Text>
+                    <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
                     <View style={styles.progressBarBg}>
                         <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
                     </View>
