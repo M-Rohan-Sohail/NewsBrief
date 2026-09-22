@@ -205,8 +205,10 @@ def update_email_preferences(
         delivery_time=pref.delivery_time
     )
 
+ADMIN_SECRET_KEY = os.environ.get("ADMIN_SECRET_KEY", "mysecret")
+
 def verify_admin_key(key: str = None):
-    if key != "mysecret":
+    if key != ADMIN_SECRET_KEY:
         raise HTTPException(status_code=403, detail="Forbidden")
     return True
 

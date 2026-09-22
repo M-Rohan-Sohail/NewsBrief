@@ -10,8 +10,7 @@ from typing import Optional
 from db import get_db
 import models
 
-# Use a dummy secret key as requested, typically overridden by environment variable
-JWT_SECRET = os.environ.get("JWT_SECRET", "dummy_jwt_secret_key_for_newsbrief_123")
+JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("SECRET_KEY") or "dummy_jwt_secret_key_for_newsbrief_123"
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
