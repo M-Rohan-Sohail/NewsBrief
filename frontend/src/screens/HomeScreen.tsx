@@ -17,7 +17,7 @@ type Props = {
 };
 
 export default function HomeScreen({ navigation }: Props) {
-  const { signOut, accessToken } = useAuth();
+  const { signOut, accessToken, hasPreferences } = useAuth();
   const { isPremium } = useRevenueCat();
   const [briefing, setBriefing] = useState<BriefingResponse | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
@@ -44,8 +44,12 @@ export default function HomeScreen({ navigation }: Props) {
           
           if (response.status === 404) {
              if (isActive) {
-                 setBriefing(null);
-                 setIsLoading(false);
+                 if (!hasPreferences) {
+                     navigation.replace('Onboarding');
+                 } else {
+                     setBriefing(null);
+                     setIsLoading(false);
+                 }
              }
              return;
           }
@@ -117,7 +121,7 @@ export default function HomeScreen({ navigation }: Props) {
         <Text style={styles.title}>Welcome to NewsBrief!</Text>
         <Text style={styles.subtitle}>Your first briefing is being generated. Check back shortly!</Text>
         <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Onboarding')}>
-          <Text style={styles.buttonText}>Update Preferences</Text>
+          <Text style={styles.buttonText}>Set Up Your Preferences</Text>
         </TouchableOpacity>
         <View style={styles.footer}>
           <TouchableOpacity onPress={signOut}>

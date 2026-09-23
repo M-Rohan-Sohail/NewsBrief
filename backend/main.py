@@ -143,11 +143,13 @@ def auth_google(request: GoogleAuthRequest, db: Session = Depends(get_db)):
     }
 
 @app.get("/me")
-def read_current_user(current_user: models.User = Depends(get_current_user)):
+def read_current_user(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()
     return {
         "user_id": str(current_user.id),
         "email": current_user.email,
-        "subscription_status": current_user.subscription_status
+        "subscription_status": current_user.subscription_status,
+        "has_preferences": pref is not None
     }
 
 @app.post("/auth/sync-premium")

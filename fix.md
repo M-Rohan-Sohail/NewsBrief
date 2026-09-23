@@ -252,12 +252,163 @@ In `frontend/src/components/FeedbackModal.tsx`, the component attempts to invoke
 
 ---
 
-## 7. Execution Instructions for Antigravity IDE
+## 7. Phase 6: Android APK Stability & Startup Crash Resolution
 
+### 7.1 Root Causes of Startup Crash & Build Errors
+1. **Missing Peer Dependency (`expo-asset`):** `expo-audio` requires `expo-asset` to be installed directly in root project dependencies for native autolinking into Android's `PackageList.java`. Without it, Android throws `ClassNotFoundException` / `NoClassDefFoundError` upon launching, causing the APK to immediately close.
+2. **Schema Invalidation in `app.json`:** `android.usesCleartextTraffic` is not a valid property in Expo's `app.json` schema, failing `expo-doctor` schema verification.
+3. **Expo SDK Version Alignment:** `expo` package was on `~57.0.23` while SDK required `~57.0.24`.
+4. **Legacy Media Module Deprecation:** `expo-av` failed Kotlin compilation with `Unresolved reference 'resolveView'` because `UIManager.resolveView` was removed in Expo 57 / React Native 0.86 New Architecture (Fabric).
+5. **Metro Static Resolution for Push Notifications & Punycode:** Dynamic imports of uninstalled `expo-notifications` and unshimmed `punycode` in `markdown-it` crashed Metro bundler during `:app:createBundleReleaseJsAndAssets`.
+
+### 7.2 Required Fixes & Implementation
+1. **Install `expo-asset` & Align Expo Version:**
+   In `frontend/package.json`, add `"expo-asset": "^57.0.18"` and update `"expo": "~57.0.24"`.
+2. **Purge Schema Errors in `app.json`:**
+   Remove `usesCleartextTraffic` from `android` object in `frontend/app.json`.
+3. **Modernize Audio System to `expo-audio`:**
+   Replace legacy `expo-av` with `expo-audio` (`^57.0.5`) in `package.json`, register `"expo-audio"` in `app.json` plugins, and update `AudioPlayer.tsx` to use `useAudioPlayer` and `useAudioPlayerStatus`.
+4. **Metro Punycode Shim & AuthContext Stub:**
+   Provide `frontend/shims/punycode.js` mapped in `frontend/metro.config.js`, and stub `registerForPushNotificationsAsync` safely in `AuthContext.tsx`.
+
+---
+
+## 8. Phase 7: Mobile Authentication Hardening & Standalone APK Runtime Crash Prevention
+
+### 8.1 Root Causes of Runtime Crash on App Launch
+1. **Uncaught Synchronous Exception in `Google.useAuthRequest`:**
+   - In `frontend/src/screens/LoginScreen.tsx`, `Google.useAuthRequest({ webClientId: 'dummy_google_client_id...' })` is invoked on initial render.
+   - On Android, `expo-auth-session/providers/google` evaluates `Platform.select({ android: 'androidClientId', ... })` and checks `config['androidClientId'] ?? config.clientId`.
+   - Because only `webClientId` is passed, `clientId` evaluates to `undefined`.
+   - `invariantClientId('androidClientId', undefined, 'Google')` in `ProviderUtils.js` synchronously executes:
+     `throw new Error("Client Id property 'androidClientId' must be defined to use Google auth on this platform.")`
+   - In production APK release builds, this uncaught exception during the initial render pass terminates the React Native Android host process immediately upon launching.
+
+2. **Missing Standalone URL Scheme in `app.json`:**
+   - Standalone APK builds require `"scheme"` in `app.json` (e.g. `"scheme": "newsbrief"`) for deep linking and OAuth redirect URI construction.
+   - Without `"scheme"`, `AuthSession.makeRedirectUri()` throws `"Cannot make a deep link into a standalone app with no custom scheme defined"`.
+
+3. **Missing Beta Tester / Developer Login Flow:**
+   - The app only provides a "Sign in with Google" button that depends on Google Cloud Console OAuth 2.0 Client ID registration (with SHA-1 release keystore fingerprint).
+   - Beta testers and developers cannot authenticate without Google Cloud setup. A fallback "Continue as Beta Tester" login flow is required to exchange authentication credentials with the backend `/auth/google` or establish a test session.
+
+4. **Absence of Top-Level React Error Boundary:**
+   - In `frontend/App.tsx`, there is no `ErrorBoundary` wrapping `<NavigationContainer>`. Any unexpected JavaScript runtime exception crashes the entire Android app to the home screen instead of rendering an actionable error recovery screen.
+
+### 8.2 Required Fixes & Implementation
+1. **Harden `LoginScreen.tsx` Authentication:**
+   - In `frontend/src/screens/LoginScreen.tsx`, supply fallback `clientId` and `androidClientId` properties so `useAuthRequest` never throws an invariant error on Android:
+     ```typescript
+     const [request, response, promptAsync] = Google.useAuthRequest({
+       clientId: 'dummy_client_id',
+       androidClientId: 'dummy_client_id.apps.googleusercontent.com',
+       webClientId: 'dummy_google_client_id.apps.googleusercontent.com',
+     });
+     ```
+   - Add a **"Continue as Beta Tester"** button that generates or provides a beta user token and signs in immediately via `signIn(token, user_id)`:
+     ```typescript
+     const handleBetaLogin = async () => {
+       try {
+         const res = await fetch(`${API_URL}/auth/google`, {
+           method: 'POST',
+           headers: { 'Content-Type': 'application/json' },
+           body: JSON.stringify({ id_token: 'beta_tester_token' })
+         });
+         const data = await res.json();
+         if (data.access_token) {
+           await signIn(data.access_token, data.user_id);
+           return;
+         }
+       } catch (err) {
+         console.warn("Backend auth failed, using local session:", err);
+       }
+       await signIn('beta_test_access_token', 'beta_user_1');
+     };
+     ```
+2. **Add URL Scheme in `frontend/app.json`:**
+   - Under `"expo"`, add `"scheme": "newsbrief"`.
+3. **Implement Root `ErrorBoundary` in `frontend/App.tsx`:**
+   - Create an `ErrorBoundary` React component that catches rendering errors and displays an error message with a "Restart App" button instead of crashing the native process.
+4. **Backend Beta Token Fallback in `backend/main.py`:**
+   - In `backend/main.py` `/auth/google`, allow testing bypass when `request.id_token.startswith("beta_")`, returning a valid JWT session for `beta_tester@startupx.com`.
+
+---
+
+## 9. Phase 8: Android Cleartext (HTTP) Communication Permission
+
+### 9.1 Root Cause of Network Error
+When testing against a self-hosted backend over raw IP and unencrypted HTTP (e.g. `http://13.50.57.65:8000`), Android 9+ (API Level 28+) network security configuration rejects all plain HTTP requests by default, throwing:
+`fetch failed: java.net.UnknownServiceException: CLEARTEXT communication to 13.50.57.65 not permitted by network security rules`
+
+Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violates Expo config schema validation. The standard and verified mechanism in Expo is through the `expo-build-properties` plugin.
+
+### 9.2 Required Fixes & Implementation
+1. **Install `expo-build-properties`:**
+   Add `"expo-build-properties": "~57.0.21"` to `frontend/package.json`.
+2. **Configure Config Plugin in `frontend/app.json`:**
+   Under `"plugins"` in `frontend/app.json`:
+   ```json
+   [
+     "expo-build-properties",
+     {
+       "android": {
+         "usesCleartextTraffic": true
+       }
+     }
+   ]
+   ```
+3. **Rebuild Native Android Binary:**
+   Because `expo-build-properties` modifies the native `AndroidManifest.xml` during native prebuild (`android:usesCleartextTraffic="true"`), a fresh APK rebuild with EAS (`eas build -p android --profile preview`) is required.
+
+---
+
+## 10. Phase 9: Frontend Preference Onboarding Routing & EAS Over-The-Air (OTA) Updates
+
+### 10.1 Root Causes of Navigation Disconnect & Build Overhead
+1. **Onboarding Routing Disconnect:**
+   - In `frontend/App.tsx`, once `accessToken` is established (after Google sign-in or "Continue as Beta Tester"), React Navigation immediately mounts the first screen in the authenticated stack, which is `HomeScreen.tsx`.
+   - `HomeScreen.tsx` immediately attempts `GET /briefing/today`.
+   - For a brand new user, guest, or beta tester without a pre-generated briefing in Postgres, `/briefing/today` returns HTTP 404 (`"No briefing found. Please ensure you have set your preferences..."`) or throws a network exception.
+   - `HomeScreen.tsx` displays either an error ("Failed to fetch briefing") or an empty state ("Your first briefing is being generated") instead of welcoming the user to configure their news preferences.
+   - The user is never automatically routed to `OnboardingScreen.tsx` ("What do you care about?") to set up their preference profile.
+
+2. **Absence of Over-The-Air (OTA) Update Capability:**
+   - Standalone APKs built without `expo-updates` do not contain the native background listener needed to download new JavaScript bundles from Expo Application Services (EAS).
+   - Every small frontend UI, text, or navigation fix currently requires running a full native Android cloud rebuild (`eas build -p android --profile preview`), which is slow and requires manually reinstalling the APK on the device.
+   - Installing `expo-updates` and configuring `"channel": "preview"` enables immediate Over-The-Air updates via `eas update`, allowing all future frontend bug fixes to deploy in seconds without rebuilding or reinstalling the APK.
+
+### 10.2 Required Fixes & Implementation
+1. **Backend User Preferences Status (`backend/main.py`):**
+   - Update `GET /me` in `backend/main.py` to check `db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()`.
+   - Return `has_preferences: bool` in the response payload so the client knows whether the user has completed onboarding.
+
+2. **Frontend Intelligent Route Resolution:**
+   - In `frontend/src/context/AuthContext.tsx` or `frontend/App.tsx`, check `has_preferences` after sign-in.
+   - If `has_preferences === false`, navigate directly to `OnboardingScreen` ("What do you care about?").
+   - In `frontend/src/screens/HomeScreen.tsx`, if `/briefing/today` returns 404 and `has_preferences` is false, automatically redirect to `Onboarding` or render a prominent "Set Up Your Preferences" button that takes the user directly to `OnboardingScreen`.
+
+3. **Install & Configure `expo-updates`:**
+   - Install `expo-updates` in `frontend/package.json`.
+   - In `frontend/app.json`:
+     - Add `"updates": { "url": "https://u.expo.dev/d409abca-a70e-4a61-9af9-eecb79b44546" }`.
+     - Add `"runtimeVersion": { "policy": "appVersion" }`.
+   - In `frontend/eas.json`:
+     - Under `build.preview`, add `"channel": "preview"`.
+     - Under `build.production`, add `"channel": "production"`.
+
+4. **One-Time Rebuild for Native OTA Support:**
+   - Rebuild the APK one final time (`eas build -p android --profile preview`) to embed `expo-updates` native binaries into the APK.
+   - Subsequent frontend changes will be pushed instantly via `eas update --channel preview --message "..."`.
+
+---
+
+## 11. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.
 2. Apply the code modifications.
 3. Run the designated verification command.
 4. Mark the task as completed `[x]` in `fix_progress.md`.
+
+
 

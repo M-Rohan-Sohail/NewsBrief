@@ -8,6 +8,7 @@ import { analytics } from '../services/analytics';
 type AuthContextType = {
   accessToken: string | null;
   userId: string | null;
+  hasPreferences: boolean;
   isLoading: boolean;
   signIn: (token: string, user_id: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -19,6 +20,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  const [hasPreferences, setHasPreferences] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const registerForPushNotificationsAsync = async (token: string) => {
@@ -37,6 +39,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (storedToken && storedUserId) {
           setAccessToken(storedToken);
           setUserId(storedUserId);
+
+          try {
+            const meRes = await fetch(`${API_URL}/me`, {
+              headers: { Authorization: `Bearer ${storedToken}` }
+            });
+            if (meRes.ok) {
+              const meData = await meRes.json();
+              setHasPreferences(!!meData.has_preferences);
+            }
+          } catch (e) {
+            console.error("Failed to fetch /me", e);
+          }
+
           // Try to register for push on startup if logged in
           registerForPushNotificationsAsync(storedToken);
           
@@ -58,6 +73,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setAccessToken(token);
       setUserId(user_id);
       
+      try {
+        const meRes = await fetch(`${API_URL}/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          setHasPreferences(!!meData.has_preferences);
+        }
+      } catch (e) {
+        console.error("Failed to fetch /me", e);
+      }
+      
       // Register for push after sign in
       registerForPushNotificationsAsync(token);
       
@@ -73,6 +100,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await AsyncStorage.removeItem('user_id');
       setAccessToken(null);
       setUserId(null);
+      setHasPreferences(false);
     } catch (e) {
       console.error("Failed to remove token", e);
     }
@@ -88,7 +116,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ accessToken, userId, isLoading, signIn, signOut, getToken }}>
+    <AuthContext.Provider value={{ accessToken, userId, hasPreferences, isLoading, signIn, signOut, getToken }}>
       {children}
     </AuthContext.Provider>
   );

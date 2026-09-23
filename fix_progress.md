@@ -48,3 +48,65 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Align Token Access in AuthContext & FeedbackModal:** Expose `getToken` in `frontend/src/context/AuthContext.tsx` and ensure `frontend/src/components/FeedbackModal.tsx` retrieves token without runtime `TypeError`.
 - `[x]` **Verification:** Run `python3 -m py_compile` across all backend modules and verify zero syntax errors.
 
+---
+
+## Phase 6: Android APK Stability, Expo 57 Native Compatibility & Startup Crash Resolution
+- `[x]` **Fix Metro Bundler Failures:**
+  - Provide `frontend/shims/punycode.js` and configure `frontend/metro.config.js` to resolve `markdown-it` punycode requirement.
+  - Safely stub `registerForPushNotificationsAsync` in `frontend/src/context/AuthContext.tsx` to prevent uninstalled dynamic import failures.
+- `[x]` **Migrate Deprecated Media Module to `expo-audio`:**
+  - Replace `expo-av` with `expo-audio` (`^57.0.5`) in `frontend/package.json` to eliminate the `Unresolved reference 'resolveView'` Kotlin crash in Expo 57 / React Native 0.86.
+  - Register `"expo-audio"` in `frontend/app.json` plugins.
+  - Refactor `frontend/src/components/AudioPlayer.tsx` to use `useAudioPlayer` and `useAudioPlayerStatus`.
+- `[x]` **Install Missing Native Peer Dependency (`expo-asset`):**
+  - Add `"expo-asset": "^57.0.18"` directly to `frontend/package.json` as required by `expo-audio` to prevent Android `NoClassDefFoundError` / immediate startup crash.
+- `[x]` **Resolve `app.json` Schema Validation:**
+  - Remove invalid property `usesCleartextTraffic` from `android` configuration in `frontend/app.json`.
+- `[x]` **Align Expo SDK Patch Version:**
+  - Update `expo` dependency from `~57.0.23` to `~57.0.24` in `frontend/package.json`.
+- `[x]` **Verification:**
+  - Run `npx -y expo-doctor` in `frontend/` $\rightarrow$ **21/21 checks passed. No issues detected!**
+  - Run `npx expo export --platform android` $\rightarrow$ **Clean Hermes bundle exported (code 0)**.
+
+---
+
+## Phase 7: Mobile Authentication Hardening & Standalone APK Runtime Crash Prevention
+- `[x]` **Harden `LoginScreen.tsx` Google Auth Invariant:**
+  - In `frontend/src/screens/LoginScreen.tsx`, supply `clientId` and `androidClientId` to `Google.useAuthRequest` so `invariantClientId` never throws on Android.
+- `[x]` **Add Beta Tester Login Flow in `LoginScreen.tsx`:**
+  - Add a "Continue as Beta Tester" option so testers and developers can authenticate directly without requiring Google Cloud Console OAuth registration.
+- `[x]` **Configure Standalone URL Scheme in `frontend/app.json`:**
+  - Add `"scheme": "newsbrief"` to `frontend/app.json` under `"expo"` to ensure deep linking and redirect URI creation succeed on native APKs.
+- `[x]` **Implement Global `ErrorBoundary` in `frontend/App.tsx`:**
+  - Wrap `<NavigationContainer>` in `App.tsx` with a React Error Boundary to catch any runtime exceptions gracefully and show an actionable recovery screen instead of terminating the app.
+- `[x]` **Enable Beta Session Support in `backend/main.py`:**
+  - In `POST /auth/google`, accept `id_token` starting with `beta_` to return a valid JWT token and user ID for beta testing.
+- `[x]` **Verification:**
+  - Run `npx -y expo-doctor` to confirm schema and peer dependencies $\rightarrow$ **21/21 checks passed!**
+  - Run `npx expo export --platform android` to verify Hermes bundling $\rightarrow$ **Clean Hermes bytecode generated (code 0)**.
+
+---
+
+## Phase 8: Android Cleartext (HTTP) Network Communication
+- `[x]` **Install `expo-build-properties`:**
+  - Add `"expo-build-properties": "~57.0.21"` to `frontend/package.json`.
+- `[x]` **Configure Cleartext Traffic in `frontend/app.json`:**
+  - Add `expo-build-properties` under `plugins` with `android.usesCleartextTraffic: true`.
+- `[x]` **Verification:**
+  - Validate config and export Hermes bundle: `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` $\rightarrow$ **Bundled 988 modules cleanly (code 0)**.
+
+---
+
+## Phase 9: Frontend Preference Onboarding Routing & EAS Over-The-Air (OTA) Updates
+- `[x]` **Add Preference Status to Backend `/me`:**
+  - Update `GET /me` in `backend/main.py` to query `models.UserPreference` and return `has_preferences: bool`.
+- `[x]` **Implement Frontend Intelligent Onboarding Routing:**
+  - In `frontend/src/context/AuthContext.tsx` or `frontend/App.tsx`, check `has_preferences` upon login and navigate directly to `OnboardingScreen` if false.
+- `[x]` **Enhance Empty State in `HomeScreen.tsx`:**
+  - In `HomeScreen.tsx`, if `/briefing/today` returns 404, display a prominent "Set Up Your Preferences" action button routing directly to `OnboardingScreen`.
+- `[x]` **Install & Configure `expo-updates`:**
+  - Install `expo-updates` in `frontend/package.json`.
+  - Configure `updates.url` (`https://u.expo.dev/d409abca-a70e-4a61-9af9-eecb79b44546`) and `runtimeVersion` in `frontend/app.json`.
+  - Configure `"channel": "preview"` under `build.preview` in `frontend/eas.json`.
+- `[x]` **Verification:**
+  - Run Hermes bundling `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` to confirm clean compilation with `expo-updates`.
