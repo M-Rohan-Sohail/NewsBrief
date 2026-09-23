@@ -15,10 +15,11 @@ const TONE_OPTIONS = ["high_signal", "technical_deep", "casual", "executive_brie
 import { API_URL } from '../config';
 
 export default function PreferenceConfirmationScreen({ navigation, route }: Props) {
-  const { accessToken } = useAuth();
+  const { accessToken, setHasPreferences } = useAuth();
   const [queries, setQueries] = useState<string[]>(route.params.search_queries || []);
   const [tags, setTags] = useState<string[]>(route.params.thematic_tags || []);
   const [tone, setTone] = useState(route.params.tone_bucket || "default");
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   
   const [newQuery, setNewQuery] = useState('');
@@ -37,7 +38,8 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
       tone_bucket: tone,
       tone_freeform: route.params.tone_freeform,
       exclude_keywords: route.params.exclude_keywords || [],
-      raw_paragraph: route.params.raw_paragraph
+      raw_paragraph: route.params.raw_paragraph,
+      email: email || undefined
     };
     
     setIsLoading(true);
@@ -55,10 +57,23 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
         throw new Error('Failed to save preferences');
       }
 
+      // Generate the briefing real-time
+      const genResponse = await fetch(`${API_URL}/briefing/generate-now`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      
+      if (!genResponse.ok) {
+        throw new Error('Failed to generate briefing');
+      }
+
+      setHasPreferences(true);
       navigation.navigate('Home');
     } catch (error) {
       console.error(error);
-      Alert.alert("Error", "Could not save preferences. Please try again.");
+      Alert.alert("Error", "Could not set up your briefing. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -72,6 +87,18 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
       </TouchableOpacity>
     </View>
   );
+
+  if (isLoading) {
+    return (
+      <LinearGradient colors={['#0F172A', '#1E293B']} style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3B82F6" style={{ marginBottom: 24 }} />
+        <Text style={{ color: '#FFF', fontSize: 24, fontWeight: '800', marginBottom: 8 }}>Setting you up...</Text>
+        <Text style={{ color: '#94A3B8', fontSize: 16, textAlign: 'center', paddingHorizontal: 40 }}>
+          Personalizing your briefing based on your topics and tone...
+        </Text>
+      </LinearGradient>
+    );
+  }
 
   return (
     <LinearGradient colors={['#0F172A', '#1E293B']} style={styles.container}>
@@ -121,11 +148,25 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
             ))}
           </View>
         </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Delivery Email</Text>
+          <Text style={{ color: '#64748B', marginBottom: 8, fontSize: 14 }}>Where should we send your daily briefing?</Text>
+          <TextInput 
+            style={[styles.addInput, { marginRight: 0 }]} 
+            placeholder="Enter your email to receive morning briefing digests..." 
+            placeholderTextColor="#64748B"
+            value={email} 
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+        </View>
       </ScrollView>
       
       <View style={styles.footer}>
         <TouchableOpacity style={styles.confirmButton} onPress={handleConfirm}>
-          <Text style={styles.confirmButtonText}>Looks Good, Continue</Text>
+          <Text style={styles.confirmButtonText}>Generate My Briefing</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>

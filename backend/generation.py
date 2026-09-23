@@ -28,7 +28,7 @@ def generate_card(cluster: Dict[str, Any], tone_bucket: str) -> Dict[str, Any]:
     articles = cluster.get("articles", [])
     context = ""
     for idx, art in enumerate(articles):
-        context += f"Source {idx+1}: {art.get('source')} - {art.get('title')}\n{art.get('content')[:500]}...\n"
+        context += f"Source {idx+1}: {art.get('source')} - {art.get('title')}\n{str(art.get('content'))[:300]}...\n"
 
     prompt = f"""
 You are an expert news editor writing in a '{tone_bucket}' tone.
@@ -77,7 +77,8 @@ def generate_super_summary(clusters: List[Dict[str, Any]], tone_bucket: str) -> 
 
     context = ""
     for idx, c in enumerate(clusters):
-        context += f"Story {idx+1}: {c.get('canonical_title')} - {c.get('representative_snippet')}\n"
+        snippet = str(c.get('representative_snippet', ''))[:150]
+        context += f"Story {idx+1}: {c.get('canonical_title')} - {snippet}\n"
 
     prompt = f"""
 You are an expert news editor writing in a '{tone_bucket}' tone.
@@ -130,7 +131,7 @@ Do not include any other sections. Be extremely detailed, concise, and professio
 Cluster Topic: {cluster_title}
 
 Raw Articles Text:
-{articles_text}
+{articles_text[:3000]}
 """
     try:
         response = groq_client.chat.completions.create(
@@ -165,8 +166,8 @@ def pre_generate_deep_dive(cluster: Dict[str, Any]) -> str:
     for idx, art in enumerate(articles):
         articles_text += f"--- Source {idx+1}: {art.get('source_name')} ---\n"
         articles_text += f"Title: {art.get('title')}\n"
-        # For deep dive, we want more context, up to 1500 chars per article
-        articles_text += f"{art.get('content')[:1500]}\n\n"
+        # For deep dive, we want more context, but will truncate overall text to 3000 chars in generate_deep_dive
+        articles_text += f"{str(art.get('content'))[:1000]}\n\n"
         
     logger.info(f"Pre-generating deep dive for '{title}'")
     return generate_deep_dive(title, articles_text)

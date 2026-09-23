@@ -46,7 +46,7 @@ class ErrorBoundary extends React.Component<{children: React.ReactNode}, {hasErr
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function RootNavigator() {
-  const { accessToken, isLoading } = useAuth();
+  const { accessToken, isLoading, hasPreferences } = useAuth();
 
   if (isLoading) {
     return (
@@ -57,7 +57,7 @@ function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={hasPreferences ? "Home" : "Onboarding"}>
       {!accessToken ? (
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : (

@@ -485,6 +485,15 @@ def onboarding_confirm(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(get_current_user)
 ):
+    if request.email:
+        current_user.email = request.email
+        # Upsert EmailPreference
+        email_pref = db.query(models.UserEmailPreference).filter(models.UserEmailPreference.user_id == current_user.id).first()
+        if email_pref:
+            email_pref.daily_digest_enabled = True
+        else:
+            email_pref = models.UserEmailPreference(user_id=current_user.id, daily_digest_enabled=True)
+            db.add(email_pref)
     # Upsert user preferences
     pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()
     
@@ -511,6 +520,112 @@ def onboarding_confirm(
         
     db.commit()
     return {"status": "success", "message": "Preferences saved"}
+
+@app.post("/briefing/generate-now", response_model=schemas.BriefingResponse)
+def generate_briefing_now(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    today = datetime.now(timezone.utc).date()
+    
+    # 1. Check if today's NewsCluster records exist; if missing, trigger Stage 1
+    clusters_today = db.query(models.NewsCluster).filter(models.NewsCluster.batch_date == today).count()
+    if clusters_today == 0:
+        logger.info("No clusters for today, running Stage 1 synchronously for on-demand generation...")
+        from pipeline_stage1 import run_stage1
+        run_stage1()
+        
+    pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()
+    if not pref:
+        raise HTTPException(status_code=400, detail="Preferences not set")
+        
+    from pipeline_stage2 import compute_user_embedding
+    if pref.preference_embedding is None:
+        pref.preference_embedding = compute_user_embedding(pref)
+        db.commit()
+        
+    # 2. Match clusters
+    matched_clusters = db.query(models.NewsCluster).filter(
+        models.NewsCluster.batch_date == today,
+        models.NewsCluster.embedding.isnot(None)
+    ).order_by(
+        models.NewsCluster.embedding.cosine_distance(pref.preference_embedding)
+    ).limit(6).all()
+    
+    if not matched_clusters:
+        raise HTTPException(status_code=500, detail="Could not match any clusters")
+        
+    cluster_ids = [c.id for c in matched_clusters]
+    
+    # 3. Retrieve Cards
+    cards = db.query(models.Card).filter(
+        models.Card.cluster_id.in_(cluster_ids),
+        models.Card.tone_bucket == pref.tone_bucket
+    ).all()
+    card_ids = [c.id for c in cards]
+    
+    # 4. SuperSummary
+    cluster_set_key = ",".join(sorted([str(c.id) for c in matched_clusters]))
+    super_summary = db.query(models.SuperSummary).filter(
+        models.SuperSummary.batch_date == today,
+        models.SuperSummary.cluster_set_key == cluster_set_key,
+        models.SuperSummary.tone_bucket == pref.tone_bucket
+    ).first()
+    
+    if not super_summary:
+        from generation import generate_super_summary
+        cluster_dicts = [
+            {"canonical_title": c.canonical_title, "representative_snippet": c.representative_snippet}
+            for c in matched_clusters
+        ]
+        import uuid
+        ss_data = generate_super_summary(cluster_dicts, pref.tone_bucket)
+        super_summary = models.SuperSummary(
+            id=uuid.uuid4(),
+            batch_date=today,
+            cluster_set_key=cluster_set_key,
+            tone_bucket=pref.tone_bucket,
+            headline=ss_data.get("headline", "Your Daily Briefing"),
+            synthesis=ss_data.get("synthesis", ""),
+            contributing_cluster_ids=cluster_ids
+        )
+        db.add(super_summary)
+        db.flush()
+        
+    # 5. Persist UserBriefing
+    existing_briefing = db.query(models.UserBriefing).filter(
+        models.UserBriefing.user_id == current_user.id,
+        models.UserBriefing.batch_date == today
+    ).first()
+    
+    if existing_briefing:
+        existing_briefing.super_summary_id = super_summary.id
+        existing_briefing.card_ids = card_ids
+    else:
+        existing_briefing = models.UserBriefing(
+            user_id=current_user.id,
+            batch_date=today,
+            super_summary_id=super_summary.id,
+            card_ids=card_ids
+        )
+        db.add(existing_briefing)
+        
+    db.commit()
+    
+    # 6. Dispatch Background Tasks
+    from services.email_service import send_daily_digest
+    from services.audio_service import generate_audio_for_summary
+    
+    background_tasks.add_task(send_daily_digest, str(current_user.id), db)
+    background_tasks.add_task(generate_audio_for_summary, super_summary, db)
+    
+    return {
+        "batch_date": str(today),
+        "is_preparing_today": False,
+        "super_summary": super_summary,
+        "cards": cards
+    }
 
 @app.post("/content/deep-dive", response_model=schemas.DeepDiveResponse)
 def get_deep_dive(

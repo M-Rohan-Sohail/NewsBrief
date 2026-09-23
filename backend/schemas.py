@@ -15,6 +15,7 @@ class OnboardingExtractResponse(BaseModel):
 
 class OnboardingConfirmRequest(OnboardingExtractResponse):
     raw_paragraph: str
+    email: Optional[str] = None
 
 class DeepDiveRequest(BaseModel):
     cluster_id: str

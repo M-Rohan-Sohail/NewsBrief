@@ -110,3 +110,26 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
   - Configure `"channel": "preview"` under `build.preview` in `frontend/eas.json`.
 - `[x]` **Verification:**
   - Run Hermes bundling `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` to confirm clean compilation with `expo-updates`.
+
+---
+
+## Phase 10: Real-Time Beta Onboarding, Custom Delivery Email & On-Demand Briefing Pipeline
+- `[x]` **Backend Email & On-Demand Generation Endpoints (`backend/main.py`):**
+  - Accept `email` in `schemas.OnboardingConfirmRequest` and update `current_user.email` + `UserEmailPreference` in `POST /onboarding/confirm`.
+  - Create endpoint `POST /briefing/generate-now` to run user cosine matching, generate super summary & cards, create `UserBriefing`, dispatch `send_daily_digest`, and return `BriefingResponse`.
+- `[x]` **Frontend AuthContext State & Initial Route Resolution (`App.tsx` & `AuthContext.tsx`):**
+  - Expose `setHasPreferences` in `frontend/src/context/AuthContext.tsx`.
+  - In `frontend/App.tsx`, set `initialRouteName={hasPreferences ? "Home" : "Onboarding"}` in `Stack.Navigator`.
+- `[x]` **Frontend Delivery Email & Real-Time Setup Spinner (`PreferenceConfirmationScreen.tsx`):**
+  - Add delivery email input to `PreferenceConfirmationScreen.tsx`.
+  - Add *"Setting you up..."* real-time generation spinner view that calls `POST /onboarding/confirm` and `POST /briefing/generate-now`.
+  - Navigate to `Home` with the live briefing immediately once generation finishes.
+- `[x]` **LLM Input & OTPM Token Limit Protection (`generation.py` & `pipeline.py`):**
+  - Bound input paragraph to 1,000 chars in `pipeline.py`.
+  - Bound article snippets to 300 chars (max 1,200 chars total) in `generate_card`.
+  - Bound cluster snippets to 150 chars (max 1,000 chars total) in `generate_super_summary`.
+  - Cap deep dive article context to 3,000 chars in `generate_deep_dive`.
+  - Add graceful fallback handling when rate limits or token limits are reached.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/main.py backend/generation.py backend/pipeline.py` to ensure backend syntax passes.
+  - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` in `frontend/` to verify Hermes build integrity.

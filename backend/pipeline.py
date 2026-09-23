@@ -13,6 +13,8 @@ client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 def extract_preferences_from_paragraph(paragraph: str, retries: int = 1) -> dict:
     if not client:
         raise RuntimeError("GROQ_API_KEY is not set. Cannot run extraction.")
+        
+    paragraph = paragraph[:1000]
 
     prompt = f"""
 You are an expert content analyzer for a news briefing application.
@@ -57,6 +59,30 @@ Paragraph:
         except (json.JSONDecodeError, ValidationError) as e:
             logger.warning(f"Extraction attempt {attempt + 1} failed: {e}")
             if attempt == retries:
-                raise ValueError("Failed to extract valid preferences after retries.")
+                # Graceful fallback on validation failure
+                return {
+                    "search_queries": ["technology", "business", "science"],
+                    "thematic_tags": ["tech", "business"],
+                    "tone_bucket": "high_signal",
+                    "tone_freeform": None,
+                    "exclude_keywords": []
+                }
+        except Exception as e:
+            logger.warning(f"Extraction API attempt {attempt + 1} failed: {e}")
+            if attempt == retries:
+                # Graceful fallback on API failure (e.g. rate limit / token limit)
+                return {
+                    "search_queries": ["technology", "business", "science"],
+                    "thematic_tags": ["tech", "business"],
+                    "tone_bucket": "high_signal",
+                    "tone_freeform": None,
+                    "exclude_keywords": []
+                }
             
-    raise ValueError("Failed to extract valid preferences.")
+    return {
+        "search_queries": ["technology", "business", "science"],
+        "thematic_tags": ["tech", "business"],
+        "tone_bucket": "high_signal",
+        "tone_freeform": None,
+        "exclude_keywords": []
+    }

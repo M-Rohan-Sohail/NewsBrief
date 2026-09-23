@@ -9,6 +9,7 @@ type AuthContextType = {
   accessToken: string | null;
   userId: string | null;
   hasPreferences: boolean;
+  setHasPreferences: (val: boolean) => void;
   isLoading: boolean;
   signIn: (token: string, user_id: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -116,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ accessToken, userId, hasPreferences, isLoading, signIn, signOut, getToken }}>
+    <AuthContext.Provider value={{ accessToken, userId, hasPreferences, setHasPreferences, isLoading, signIn, signOut, getToken }}>
       {children}
     </AuthContext.Provider>
   );

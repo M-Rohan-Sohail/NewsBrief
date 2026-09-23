@@ -402,7 +402,67 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 11. Execution Instructions for Antigravity IDE
+## 11. Phase 10: Real-Time Beta Onboarding, Custom Delivery Email & On-Demand Briefing Pipeline
+
+### 11.1 Problem Statement & Objectives
+1. **Beta Tester Onboarding First-Contact Experience:**
+   - A fresh beta tester signing in must be routed directly to the Preference setup flow (`OnboardingScreen.tsx` - "What do you care about?") rather than landing on the empty `HomeScreen`.
+2. **Beta Tester Delivery Email Registration:**
+   - Because beta testers log in without standard passwords or Google OAuth profiles, they must be able to specify their own delivery email address during the preference confirmation step.
+   - This email is stored on `User.email` and `UserEmailPreference` so Resend sends digest briefings to their actual email inbox.
+3. **On-Demand Real-Time Briefing Generation with Feedback Spinner:**
+   - Rather than waiting for the nightly cron (which runs at 3 AM/4 AM UTC), the app must immediately personalize and generate the user's first briefing in real time.
+   - While generating, the app displays a dedicated progress experience: *"Setting you up... Personalizing your briefing..."*
+   - Once completed, the app displays the generated briefing immediately, triggers the initial daily digest email via Resend in the background, and readies the audio briefing in the background.
+4. **Slack Scope:**
+   - Keep Slack notifications in demo mode (skipped for on-demand beta onboarding).
+
+### 11.2 Required Fixes & Implementation
+1. **Backend Email & On-Demand Briefing Endpoints (`backend/main.py`):**
+   - Update `schemas.OnboardingConfirmRequest` to include optional `email: Optional[EmailStr] = None`.
+   - In `POST /onboarding/confirm`:
+     - If `request.email` is supplied, update `current_user.email = request.email` and upsert `UserEmailPreference(user_id=current_user.id, daily_digest_enabled=True)`.
+   - Add endpoint `POST /briefing/generate-now`:
+     - Accepts authenticated `current_user`.
+     - Checks if today's `NewsCluster` records exist; if missing, triggers `pipeline_stage1.run_stage1()` to populate base clusters.
+     - Computes `preference_embedding` for `current_user` and performs `pgvector` cosine matching to find the top 6 clusters.
+     - Retrieves or generates cards matching the user's selected `tone_bucket`.
+     - Generates the `SuperSummary` using Groq LLM (or reuses existing matching summary).
+     - Persists `UserBriefing(user_id=current_user.id, batch_date=today, super_summary_id=..., card_ids=...)`.
+     - In `BackgroundTasks`: dispatches `services.email_service.send_daily_digest(current_user.id, db)` and audio generation.
+     - Returns `schemas.BriefingResponse` with the newly generated super summary and cards.
+
+2. **Frontend Navigation & Initial Route Resolution (`frontend/App.tsx` & `AuthContext.tsx`):**
+   - In `frontend/src/context/AuthContext.tsx`, expose `setHasPreferences` in `AuthContextType` so screens can update onboarding status reactively.
+   - In `frontend/App.tsx`:
+     - Read `hasPreferences` from `useAuth()`.
+     - Configure `initialRouteName={hasPreferences ? "Home" : "Onboarding"}` in `Stack.Navigator`.
+
+3. **Frontend Preference & Email Input Flow (`PreferenceConfirmationScreen.tsx`):**
+   - Add an Email Input section:
+     - Header: *"Where should we send your daily briefing?"*
+     - Input: Email address field (prefilled if user email is not the placeholder `beta_tester@startupx.com`).
+     - Note: *"Enter your email to receive morning briefing digests."*
+   - Implement the *"Setting you up..."* Loading State:
+     - When the user taps **"Generate My Briefing"**, show an animated loading view:
+       - Spinner with gradient styling.
+       - Title: *"Setting you up..."*
+       - Subtitle: *"Personalizing your briefing based on your topics and tone..."*
+     - Calls `POST /onboarding/confirm` (including email).
+     - Calls `POST /briefing/generate-now`.
+     - Once response returns with cards, updates `setHasPreferences(true)` and navigates to `Home` with the live briefing preloaded.
+
+4. **LLM Input & Context Window Guardrails (`generation.py` & `pipeline.py`):**
+   - Prevent Groq `413 / Request too large for model 'qwen/qwen3.8-27b' (OTPM Limit)` errors:
+     - In `pipeline.py` (`extract_preferences_from_paragraph`): Truncate input paragraph to max 1,000 characters.
+     - In `generation.py` (`generate_card`): Bound article content per source to max 300 characters, capping total context at 1,200 characters (~300 tokens).
+     - In `generation.py` (`generate_super_summary`): Bound each story snippet to max 150 characters, capping overall prompt context at 1,000 characters (~250 tokens).
+     - In `generation.py` (`generate_deep_dive`): Cap combined article text to max 3,000 characters (~750 tokens).
+     - Add graceful fallback: If an LLM call fails with token limits or rate limits, fall back to template summarization instead of throwing an unhandled HTTP 500 error.
+
+---
+
+## 12. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.
