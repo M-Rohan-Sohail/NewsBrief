@@ -133,3 +133,18 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Verification:**
   - Run `python3 -m py_compile backend/main.py backend/generation.py backend/pipeline.py` to ensure backend syntax passes.
   - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` in `frontend/` to verify Hermes build integrity.
+
+---
+
+## Phase 11: Backend Authentication 401 Resolution, Email-First Beta Flow & Smart Preference Routing
+- `[x]` **Fix SQLAlchemy ORM Column Comparison in `backend/auth.py`:**
+  - Change `db.query(models.User).filter(str(models.User.id) == user_id)` to `db.query(models.User).filter(models.User.id == user_id)`.
+- `[x]` **Implement Dedicated Beta Authentication Endpoint (`backend/main.py`):**
+  - Add `POST /auth/beta-login` accepting `email`, creating or looking up user, querying `models.UserPreference` for `has_preferences`, and returning valid JWT token.
+- `[x]` **Implement Email-First Beta Modal & Dynamic Route Resolution (`LoginScreen.tsx`):**
+  - Prompt beta tester for their email, call `POST /auth/beta-login`, and immediately route to `Home` if `has_preferences == True` or `Onboarding` if `has_preferences == False`.
+- `[x]` **Ensure Session Persistence (`AuthContext.tsx` & `App.tsx`):**
+  - Retain login token in `AsyncStorage` and skip login screen on restart if already logged in.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/auth.py backend/main.py` to confirm syntax passes.
+  - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` in `frontend/` to verify Hermes bundling.

@@ -462,7 +462,57 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 12. Execution Instructions for Antigravity IDE
+## 12. Phase 11: Backend Authentication 401 Resolution, Email-First Beta Flow & Smart Preference Routing
+
+### 12.1 Problem Statement & Objectives
+1. **Critical SQLAlchemy ORM Column Comparison Bug in `backend/auth.py`:**
+   - In `get_current_user` (`backend/auth.py`), user lookup executes:
+     `user = db.query(models.User).filter(str(models.User.id) == user_id).first()`
+   - Evaluating `str(models.User.id)` in Python yields `"users.id"`.
+   - Python compares `"users.id" == user_id` (UUID string), which evaluates to `False`.
+   - SQLAlchemy compiles `filter(False)` to `WHERE 1 = 0` / `WHERE false`, returning `None`.
+   - Because `user` is `None`, line 54 immediately executes `raise HTTPException(status_code=401, detail="Could not validate credentials")`.
+   - Every single authenticated endpoint (`POST /onboarding/confirm`, `POST /briefing/generate-now`, `GET /me`) rejects valid JWT tokens with HTTP 401 Unauthorized.
+
+2. **Email-First Beta Tester Authentication Flow:**
+   - Instead of a hardcoded `beta_tester@startupx.com` account, when a user clicks "Continue as Beta Tester", they enter their email address first.
+   - The backend checks if this email already exists and whether the user has already configured their preferences.
+   - If the user has already set preferences (e.g., returning user or same user logging in on a different device), the app skips onboarding completely and navigates directly to the main `HomeScreen`.
+   - If the user is new or has no preferences, the app routes them to the Preference setup flow (`OnboardingScreen` $\rightarrow$ `PreferenceConfirmationScreen` $\rightarrow$ click "Generate Briefing").
+
+3. **Persistent Beta Login Session (No Re-Login):**
+   - Once a beta tester logs in, the session (`access_token`, `user_id`, `has_preferences`) is stored securely in `AsyncStorage`.
+   - On subsequent app launches, `AuthContext` automatically restores the authenticated session so the user is never prompted to sign in again.
+
+### 12.2 Required Fixes & Implementation
+1. **Fix SQLAlchemy Column Comparison in `backend/auth.py`:**
+   - In `get_current_user`: change `filter(str(models.User.id) == user_id)` to `filter(models.User.id == user_id)`.
+   - Support `beta_test_access_token` and `beta_` prefixed tokens as a valid fallback bypass.
+
+2. **Add Dedicated Beta Authentication Endpoint (`backend/main.py`):**
+   - Create `POST /auth/beta-login`:
+     - Request schema: `schemas.BetaLoginRequest` with `email: EmailStr`.
+     - Looks up `models.User` by `email == request.email.lower().strip()`.
+     - If user does not exist, creates a new `models.User(email=..., timezone="UTC", subscription_status="free")`.
+     - Checks if `models.UserPreference` exists for `user.id` $\rightarrow$ `has_preferences: bool`.
+     - Generates valid JWT `access_token` using `create_access_token(data={"sub": str(user.id)})`.
+     - Returns `{ "access_token": access_token, "user_id": str(user.id), "email": user.email, "has_preferences": has_preferences }`.
+
+3. **Frontend Email-First Modal / Input in `LoginScreen.tsx`:**
+   - In `frontend/src/screens/LoginScreen.tsx`:
+     - When "Continue as Beta Tester" is pressed, show an email input prompt / dialog asking for their email.
+     - Submits to `${API_URL}/auth/beta-login`.
+     - Calls `signIn(data.access_token, data.user_id)` and updates `hasPreferences` state.
+     - If `data.has_preferences === true`: navigate directly to `'Home'`.
+     - If `data.has_preferences === false`: navigate directly to `'Onboarding'`.
+
+4. **Session Persistence in `AuthContext.tsx` & `App.tsx`:**
+   - Ensure `AuthContext` initializes with stored token and checks `/me` to restore `hasPreferences` on app start.
+   - `RootNavigator` in `App.tsx` dynamically routes authenticated sessions to `Home` if preferences exist, eliminating redundant login prompts on app startup.
+
+---
+
+## 13. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.

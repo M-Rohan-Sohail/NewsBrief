@@ -96,3 +96,8 @@ class AnalyticsEventCreate(BaseModel):
     channel: str
     event_name: str
     properties: Optional[dict] = None
+
+from pydantic import EmailStr
+
+class BetaLoginRequest(BaseModel):
+    email: EmailStr

@@ -142,6 +142,36 @@ def auth_google(request: GoogleAuthRequest, db: Session = Depends(get_db)):
         "user_id": str(user.id)
     }
 
+@app.post("/auth/beta-login")
+def beta_login(request: schemas.BetaLoginRequest, db: Session = Depends(get_db)):
+    email_clean = request.email.lower().strip()
+    user = db.query(models.User).filter(models.User.email == email_clean).first()
+    
+    if not user:
+        import uuid
+        user = models.User(
+            id=uuid.uuid4(),
+            email=email_clean,
+            timezone="UTC",
+            subscription_status="free",
+            created_at=datetime.utcnow()
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
+    access_token = create_access_token(data={"sub": str(user.id)})
+    
+    pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == user.id).first()
+    has_preferences = pref is not None
+    
+    return {
+        "access_token": access_token,
+        "user_id": str(user.id),
+        "email": user.email,
+        "has_preferences": has_preferences
+    }
+
 @app.get("/me")
 def read_current_user(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     pref = db.query(models.UserPreference).filter(models.UserPreference.user_id == current_user.id).first()
