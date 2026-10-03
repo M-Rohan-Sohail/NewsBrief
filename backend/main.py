@@ -13,7 +13,7 @@ from db import get_db, engine
 from auth import create_access_token, create_refresh_token, get_current_user
 
 # Create tables if not using migrations (for local testing without alembic run yet)
-# models.Base.metadata.create_all(bind=engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="NewsBrief API", version="1.0.0")
 
