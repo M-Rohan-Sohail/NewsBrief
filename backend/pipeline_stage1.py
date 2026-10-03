@@ -115,7 +115,7 @@ def run_stage1():
             )
             db.add(db_cluster)
             
-            # 5. Pre-generate Base Cards
+            # 5. Pre-generate Base Cards (compact context)
             cards_by_tone = pre_generate_base_cards(cluster_data, ["high_signal", "technical_deep"])
             
             for tone, card_data in cards_by_tone.items():
@@ -131,20 +131,7 @@ def run_stage1():
                 )
                 db.add(db_card)
                 
-            # 6. Pre-generate Deep Dive (Top 10 only)
-            if idx < 10:
-                deep_dive_md = pre_generate_deep_dive(cluster_data)
-                db_dd = DeepDive(
-                    id=uuid.uuid4(),
-                    cluster_id=cluster_id,
-                    title=title,
-                    body_markdown=deep_dive_md,
-                    pre_generated=True,
-                    generated_at=now
-                )
-                db.add(db_dd)
-                
-        # 7. Commit Transaction
+        # 6. Commit Transaction
         logger.info("Committing Stage 1 pipeline data to database...")
         db.commit()
         logger.info("=== Stage 1 Pipeline Complete ===")

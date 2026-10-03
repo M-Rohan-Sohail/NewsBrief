@@ -35,14 +35,13 @@ def mock_dependencies():
         mock_cards.return_value = {
             "high_signal": {"headline": "Card", "bullets": [], "source_name": "src", "source_url": "url"}
         }
-        mock_deep_dive.return_value = "# Deep Dive"
         
         mock_session = MagicMock()
         mock_session_cls.return_value = mock_session
         
         yield {
             "hn": mock_hn, "dedup": mock_dedup, "cluster": mock_cluster,
-            "centroid": mock_centroid, "cards": mock_cards, "dd": mock_deep_dive,
+            "centroid": mock_centroid, "cards": mock_cards,
             "session": mock_session
         }
 
@@ -56,11 +55,10 @@ def test_run_stage1(mock_dependencies):
     mock_dependencies["cluster"].assert_called_once()
     mock_dependencies["centroid"].assert_called_once_with("Cluster 1", "Snippet 1")
     mock_dependencies["cards"].assert_called_once()
-    mock_dependencies["dd"].assert_called_once()
     
     # Ensure database commit was called
     mock_dependencies["session"].commit.assert_called_once()
     
-    # Check that NewsCluster, Card, and DeepDive were added
+    # Check that NewsCluster and Card were added (Deep Dives are on-demand)
     add_calls = mock_dependencies["session"].add.call_args_list
-    assert len(add_calls) == 3 # 1 cluster + 1 card + 1 deep dive
+    assert len(add_calls) == 2 # 1 cluster + 1 card

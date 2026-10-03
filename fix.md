@@ -512,7 +512,28 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 13. Execution Instructions for Antigravity IDE
+## 13. Phase 12: Groq Token Budget Optimization (~5,000 Tokens), Pipeline Rate-Limit Protection & Smart Fallback
+
+1. **Clustering Token Budgeting (`backend/clustering.py`):**
+   - Strictly maintain `model="qwen/qwen3.8-27b"`.
+   - Calculate prompt capacity dynamically: Target ~17,500 characters of article summaries (~4,700 tokens) + ~1,000 chars instruction overhead (~250 tokens) $\approx$ **4,800 - 5,000 tokens total**, leaving a 2,000+ token safety buffer below Groq's 7,000 ITPM ceiling.
+   - Round-robin sample the top 60–65 ingested articles across Hacker News, GitHub Trending, arXiv AI, and RSS feeds.
+   - Include 180-character snippets and 80-character titles for rich web intelligence.
+
+2. **Smart Domain Fallback (`backend/clustering.py`):**
+   - If Groq returns 413/429 or fails, activate `fallback_clustering(articles)`.
+   - Groups articles into 4 high-signal clusters: *AI & Machine Learning Breakthroughs*, *Open Source & Developer Ecosystem*, *Tech Industry & Startup Ecosystem*, and *Global Technology & Policy*.
+   - Centroids and embeddings are computed locally via `sentence-transformers` (offline, 0 tokens).
+   - Ensures Stage 1 and `/briefing/generate-now` never abort with an empty cluster set or HTTP 500.
+
+3. **Safe Sliding-Window Budgeting (`backend/pipeline_stage1.py` & `backend/generation.py`):**
+   - Remove synchronous `pre_generate_deep_dive` in Stage 1 loop, saving ~10,000 tokens (deep dives are served on-demand via `POST /content/deep-dive`).
+   - Constrain `generate_card` context to top 2 articles with 150-char snippets (~120 tokens per card), keeping all base card generations within the remaining ~2,000 token budget for the 60-second window.
+   - Add resilient fallbacks in `generate_card` and `generate_super_summary` so card and summary generation never display error placeholders.
+
+---
+
+## 14. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.

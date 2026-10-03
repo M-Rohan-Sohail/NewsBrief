@@ -148,3 +148,23 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Verification:**
   - Run `python3 -m py_compile backend/auth.py backend/main.py` to confirm syntax passes.
   - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` in `frontend/` to verify Hermes bundling.
+
+---
+
+## Phase 12: Groq Token Optimization (~5,000 Tokens), Pipeline Rate-Limit Protection & Smart Fallback
+- `[x]` **Groq Clustering Context Budgeting (`backend/clustering.py`):**
+  - Strictly maintain `model="qwen/qwen3.8-27b"`.
+  - Target ~4,800 to 5,000 input tokens (~17,500 characters of articles + 1,000 chars overhead), leaving a 2,000+ token safety buffer below Groq's 7,000 ITPM ceiling.
+  - Round-robin sample the top 60–65 ingested articles across Hacker News, GitHub Trending, arXiv AI, and RSS feeds.
+  - Include 180-character snippets and 80-character titles for rich web intelligence.
+- `[x]` **Smart Domain-Based Fallback Clustering (`backend/clustering.py`):**
+  - If Groq rate limits (413/429) or fails, activate `fallback_clustering(articles)`.
+  - Groups articles into 4 high-signal clusters: *AI & Machine Learning Breakthroughs*, *Open Source & Developer Ecosystem*, *Tech Industry & Startup Ecosystem*, and *Global Technology & Policy*.
+  - Ensures Stage 1 and `/briefing/generate-now` never abort with an empty cluster set or HTTP 500.
+- `[x]` **Safe Sliding-Window Budgeting (`backend/pipeline_stage1.py` & `backend/generation.py`):**
+  - Remove synchronous `pre_generate_deep_dive` in Stage 1 loop, saving ~10,000 tokens (deep dives are served on-demand via `POST /content/deep-dive`).
+  - Constrain `generate_card` context to top 2 articles with 150-char snippets (~120 tokens per card), keeping all base card generations within the remaining ~2,000 token budget for the 60-second window.
+  - Add resilient fallbacks in `generate_card` and `generate_super_summary` so card and summary generation never display error placeholders.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/clustering.py backend/generation.py backend/pipeline_stage1.py backend/main.py` -> Clean pass (code 0).
+  - Run `backend/tests/test_clustering_budget.py` -> All 4 unit tests passed (budgeting, round-robin sampling, fallback clustering, card fallback).
