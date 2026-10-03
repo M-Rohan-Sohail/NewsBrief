@@ -97,7 +97,5 @@ class AnalyticsEventCreate(BaseModel):
     event_name: str
     properties: Optional[dict] = None
 
-from pydantic import EmailStr
-
 class BetaLoginRequest(BaseModel):
-    email: EmailStr
+    email: str

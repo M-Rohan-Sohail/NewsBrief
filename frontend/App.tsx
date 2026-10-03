@@ -57,7 +57,7 @@ function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={hasPreferences ? "Home" : "Onboarding"}>
+    <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={!accessToken ? "Login" : (hasPreferences ? "Home" : "Onboarding")}>
       {!accessToken ? (
         <Stack.Screen name="Login" component={LoginScreen} />
       ) : (
