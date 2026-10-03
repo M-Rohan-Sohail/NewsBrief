@@ -12,8 +12,17 @@ import pipeline
 from db import get_db, engine
 from auth import create_access_token, create_refresh_token, get_current_user
 
-# Create tables if not using migrations (for local testing without alembic run yet)
-models.Base.metadata.create_all(bind=engine)
+from sqlalchemy import text
+
+def init_db():
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector;"))
+            conn.commit()
+        models.Base.metadata.create_all(bind=engine)
+        logger.info("Database tables and vector extensions verified successfully.")
+    except Exception as e:
+        logger.error(f"Database initialization error: {e}")
 
 app = FastAPI(title="NewsBrief API", version="1.0.0")
 
@@ -82,7 +91,8 @@ def daily_pipeline_job():
     logger.info("Daily scheduled pipeline and deliveries completed.")
 
 @app.on_event("startup")
-def start_scheduler():
+def on_startup():
+    init_db()
     scheduler.add_job(daily_pipeline_job, 'cron', hour=0, minute=0, timezone='UTC')
     scheduler.start()
 
