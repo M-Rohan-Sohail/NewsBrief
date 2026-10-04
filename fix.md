@@ -565,7 +565,19 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 16. Execution Instructions for Antigravity IDE
+## 16. Phase 15: BriefingResponse Pydantic Serialization & UUID Type Coercion
+
+1. **Schema Union Support (`backend/schemas.py`):**
+   - Update `CardResponse`, `SuperSummaryResponse`, and `BriefingResponse` to accept `Union[UUID, str]` for all UUID identifiers (`id`, `cluster_id`).
+   - Add `model_config = {"from_attributes": True}` to allow seamless ORM attribute extraction.
+   - Eliminates `fastapi.exceptions.ResponseValidationError: 1 validation error: {'type': 'string_type', 'loc': ('response', 'super_summary', 'id'), 'msg': 'Input should be a valid string', 'input': UUID('...')}`.
+
+2. **Explicit Response Serialization (`backend/main.py`):**
+   - In `POST /briefing/generate-now`, explicitly instantiate `schemas.BriefingResponse` with `str(super_summary.id)`, `str(c.id)`, and `str(c.cluster_id)` matching the working pattern in `get_briefing_today`.
+
+---
+
+## 17. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.

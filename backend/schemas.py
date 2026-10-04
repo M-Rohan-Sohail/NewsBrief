@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Union
+from uuid import UUID
 
 ToneBucket = Literal["high_signal", "technical_deep", "casual", "executive_brief", "default"]
 
@@ -26,23 +27,29 @@ class DeepDiveResponse(BaseModel):
     body_markdown: str
 
 class CardResponse(BaseModel):
-    id: str
-    cluster_id: str
+    id: Union[UUID, str]
+    cluster_id: Union[UUID, str]
     headline: str
     bullets: List[str]
     source_name: str
     source_url: str
 
+    model_config = {"from_attributes": True}
+
 class SuperSummaryResponse(BaseModel):
-    id: str
+    id: Union[UUID, str]
     headline: str
     synthesis: str
+
+    model_config = {"from_attributes": True}
 
 class BriefingResponse(BaseModel):
     batch_date: str
     is_preparing_today: bool
     super_summary: SuperSummaryResponse
     cards: List[CardResponse]
+
+    model_config = {"from_attributes": True}
 
 class CardViewResponse(BaseModel):
     limit_reached: bool

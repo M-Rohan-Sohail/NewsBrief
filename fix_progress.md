@@ -201,3 +201,15 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Verification:**
   - Run `python3 -m py_compile backend/services/audio_service.py backend/pipeline_stage1.py backend/main.py` -> Clean pass (code 0).
   - Run unit test `test_generate_audio_for_summary` in `backend/tests/test_audio_service.py` -> Clean pass.
+
+---
+
+## Phase 15: BriefingResponse Pydantic Serialization & UUID Type Coercion
+- `[x]` **Briefing Response Pydantic Schema Alignment (`backend/schemas.py`):**
+  - Update `CardResponse`, `SuperSummaryResponse`, and `BriefingResponse` to accept `Union[UUID, str]` for all identifier fields (`id`, `cluster_id`).
+  - Add `model_config = {"from_attributes": True}` for robust ORM attribute conversion.
+  - Resolves `fastapi.exceptions.ResponseValidationError: 1 validation error: {'type': 'string_type', 'loc': ('response', 'super_summary', 'id'), 'msg': 'Input should be a valid string', 'input': UUID('...')}`.
+- `[x]` **Explicit Briefing Serialization in Endpoint (`backend/main.py`):**
+  - In `POST /briefing/generate-now`, explicitly construct `schemas.BriefingResponse` with `str(super_summary.id)`, `str(c.id)`, and `str(c.cluster_id)` matching the working pattern in `get_briefing_today`.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/schemas.py backend/main.py` -> Clean pass (code 0).

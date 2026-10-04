@@ -660,12 +660,26 @@ def generate_briefing_now(
     background_tasks.add_task(send_daily_digest, str(current_user.id), db)
     background_tasks.add_task(generate_audio_for_summary, super_summary, db)
     
-    return {
-        "batch_date": str(today),
-        "is_preparing_today": False,
-        "super_summary": super_summary,
-        "cards": cards
-    }
+    return schemas.BriefingResponse(
+        batch_date=str(today),
+        is_preparing_today=False,
+        super_summary=schemas.SuperSummaryResponse(
+            id=str(super_summary.id),
+            headline=super_summary.headline,
+            synthesis=super_summary.synthesis
+        ),
+        cards=[
+            schemas.CardResponse(
+                id=str(c.id),
+                cluster_id=str(c.cluster_id),
+                headline=c.headline,
+                bullets=c.bullets or [],
+                source_name=c.source_name or "Unknown",
+                source_url=c.source_url or ""
+            )
+            for c in cards
+        ]
+    )
 
 @app.post("/content/deep-dive", response_model=schemas.DeepDiveResponse)
 def get_deep_dive(
