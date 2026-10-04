@@ -188,3 +188,16 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Verification:**
   - Run `python3 -m py_compile backend/auth.py backend/pipeline_stage1.py backend/generation.py backend/clustering.py` -> Clean pass (code 0).
   - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` -> Clean pass (988 modules, code 0).
+
+---
+
+## Phase 14: Audio Service Import Alignment & LLM Burst Rate Pacing
+- `[x]` **Resolve `generate_audio_for_summary` Import Error (`backend/services/audio_service.py`):**
+  - Implement `generate_audio_for_summary(super_summary: SuperSummary, db: Session)` in `services/audio_service.py` to query contributing cards and delegate to `generate_tts_audio`.
+  - Add `max_tokens=400` to `generate_audio_script` to prevent output token limit exhaustion during audio synthesis.
+  - Resolves `ImportError: cannot import name 'generate_audio_for_summary' from 'services.audio_service'` and subsequent HTTP 500 in `/briefing/generate-now`.
+- `[x]` **Pacing Delay Between Cluster Card Generations (`backend/pipeline_stage1.py`):**
+  - Add a 1.2-second pacing delay (`time.sleep(1.2)`) between cluster card generations in Stage 1 to prevent bursting Groq's 30 RPM limit and avoiding LLM cooldown cycles.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/services/audio_service.py backend/pipeline_stage1.py backend/main.py` -> Clean pass (code 0).
+  - Run unit test `test_generate_audio_for_summary` in `backend/tests/test_audio_service.py` -> Clean pass.

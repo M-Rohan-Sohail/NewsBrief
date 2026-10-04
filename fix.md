@@ -553,7 +553,19 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 15. Execution Instructions for Antigravity IDE
+## 15. Phase 14: Audio Service Import Alignment & LLM Burst Rate Pacing
+
+1. **Audio Service Import Alignment (`backend/services/audio_service.py`):**
+   - Implement `generate_audio_for_summary(super_summary: SuperSummary, db: Session)` in `services/audio_service.py` to fetch contributing cards and invoke `generate_tts_audio`.
+   - Add `max_tokens=400` to `generate_audio_script`.
+   - Resolves `ImportError: cannot import name 'generate_audio_for_summary' from 'services.audio_service'` and subsequent HTTP 500 error in `/briefing/generate-now`.
+
+2. **LLM Pacing Delay (`backend/pipeline_stage1.py`):**
+   - Add a 1.2-second pacing delay (`time.sleep(1.2)`) between cluster card generations in Stage 1 to prevent bursting Groq's RPM limit and avoiding cooldown cycles.
+
+---
+
+## 16. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.

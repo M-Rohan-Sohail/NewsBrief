@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import time
 from datetime import date, datetime, timezone
 import uuid
 import sys
@@ -138,6 +139,9 @@ def run_stage1():
                     generated_at=now
                 )
                 db.add(db_card)
+                
+            # Pacing sleep between clusters to avoid bursting Groq RPM limits and triggering cooldowns
+            time.sleep(1.2)
                 
         # 6. Commit Transaction
         logger.info("Committing Stage 1 pipeline data to database...")

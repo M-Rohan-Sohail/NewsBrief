@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock, AsyncMock
 from services.audio_service import generate_tts_audio, generate_audio_script
 from models import SuperSummary, Card
@@ -43,3 +42,17 @@ def test_generate_tts_audio(mock_synthesize, mock_gen_script):
     assert ss.audio_url == "/static/audio/2023-01-01/mock_uuid.mp3"
     assert ss.audio_duration_seconds is not None
     mock_db.commit.assert_called_once()
+
+@patch("services.audio_service.generate_tts_audio")
+def test_generate_audio_for_summary(mock_generate_tts):
+    from services.audio_service import generate_audio_for_summary
+    mock_generate_tts.return_value = "/static/audio/test.mp3"
+    
+    ss = MagicMock()
+    ss.contributing_cluster_ids = ["cid1"]
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.all.return_value = []
+    
+    result = generate_audio_for_summary(ss, mock_db)
+    assert result == "/static/audio/test.mp3"
+    mock_generate_tts.assert_called_once()

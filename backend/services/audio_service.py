@@ -42,6 +42,7 @@ def generate_audio_script(super_summary: SuperSummary, cards: list[Card]) -> str
         response = groq_client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
+            max_tokens=400
         )
         script = response.choices[0].message.content.strip()
         # Clean up any potential markdown that the LLM might have ignored instructions about
@@ -92,4 +93,18 @@ def generate_tts_audio(super_summary: SuperSummary, cards: list[Card], db: Sessi
         return url_path
     except Exception as e:
         logger.error(f"Failed to synthesize audio using edge-tts: {e}")
+        return None
+
+def generate_audio_for_summary(super_summary: SuperSummary, db: Session):
+    """
+    Convenience wrapper dispatched by background_tasks in main.py.
+    Retrieves the contributing cards and delegates to generate_tts_audio.
+    """
+    try:
+        cards = []
+        if super_summary.contributing_cluster_ids:
+            cards = db.query(Card).filter(Card.cluster_id.in_(super_summary.contributing_cluster_ids)).all()
+        return generate_tts_audio(super_summary, cards, db)
+    except Exception as e:
+        logger.error(f"Error in generate_audio_for_summary: {e}")
         return None
