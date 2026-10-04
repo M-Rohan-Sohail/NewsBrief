@@ -85,6 +85,8 @@ def run_stage1():
         # Sort clusters by number of articles in them to find "top 10" for Deep Dives
         clusters.sort(key=lambda c: len(c.get("articles", [])), reverse=True)
         
+        # Step A: Persist all NewsCluster rows first and flush to PostgreSQL
+        cluster_records = []
         for idx, cluster_data in enumerate(clusters):
             title = cluster_data.get("canonical_title", "Unknown")
             snippet = cluster_data.get("representative_snippet", "")
@@ -114,8 +116,14 @@ def run_stage1():
                 embedding=embedding
             )
             db.add(db_cluster)
+            cluster_records.append((cluster_id, cluster_data, title))
             
-            # 5. Pre-generate Base Cards (compact context)
+        # Explicitly flush clusters so all foreign key constraints are satisfied in PostgreSQL
+        db.flush()
+        logger.info(f"Flushed {len(cluster_records)} clusters to database. Generating base cards...")
+
+        # Step B: Pre-generate Base Cards for each flushed cluster
+        for cluster_id, cluster_data, title in cluster_records:
             cards_by_tone = pre_generate_base_cards(cluster_data, ["high_signal", "technical_deep"])
             
             for tone, card_data in cards_by_tone.items():

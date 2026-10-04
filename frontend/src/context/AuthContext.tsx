@@ -48,6 +48,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (meRes.ok) {
               const meData = await meRes.json();
               setHasPreferences(!!meData.has_preferences);
+            } else if (meRes.status === 401) {
+              console.warn("Stored access token expired or invalid, resetting session");
+              await AsyncStorage.multiRemove(['access_token', 'user_id']);
+              setAccessToken(null);
+              setUserId(null);
+              setHasPreferences(false);
             }
           } catch (e) {
             console.error("Failed to fetch /me", e);

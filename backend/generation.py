@@ -54,7 +54,8 @@ Cluster Articles Context:
         response = groq_client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            max_tokens=250
         )
         content = response.choices[0].message.content
         return json.loads(content)
@@ -106,7 +107,8 @@ Today's Stories:
         response = groq_client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            max_tokens=350
         )
         content = response.choices[0].message.content
         return json.loads(content)

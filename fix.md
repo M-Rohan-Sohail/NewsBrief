@@ -533,7 +533,27 @@ Adding `usesCleartextTraffic` directly under `expo.android` in `app.json` violat
 
 ---
 
-## 14. Execution Instructions for Antigravity IDE
+## 14. Phase 13: Database Foreign Key Flush, Groq OTPM Rate Limits & Mobile Token Expiration
+
+1. **Database Insertion Order & Flush (`backend/pipeline_stage1.py`):**
+   - Explicitly call `db.flush()` immediately after creating all `NewsCluster` records so that all `NewsCluster.id` values exist in PostgreSQL before any child `Card` records are inserted.
+   - Prevents `psycopg2.errors.ForeignKeyViolation: insert or update on table "cards" violates foreign key constraint "cards_cluster_id_fkey"`.
+
+2. **Groq OTPM Output Token Capping (`backend/generation.py` & `backend/clustering.py`):**
+   - Add `max_tokens=250` in `generate_card`.
+   - Add `max_tokens=350` in `generate_super_summary`.
+   - Add `max_tokens=800` in `cluster_articles`.
+   - Prevents Groq from reserving default 2048-token output buffers and tripping the 1,000 Output Tokens Per Minute (OTPM) on-demand limit.
+
+3. **Mobile Session Longevity & Graceful 401 Re-Authentication (`backend/auth.py`, `AuthContext.tsx`, `PreferenceConfirmationScreen.tsx`):**
+   - Increase `ACCESS_TOKEN_EXPIRE_MINUTES` to 60 days (`60 * 24 * 60`).
+   - Handle UUID type conversion safely in `auth.py`.
+   - In `AuthContext.tsx`, automatically clear expired tokens from `AsyncStorage` if `GET /me` returns 401 on startup.
+   - In `PreferenceConfirmationScreen.tsx`, alert the user and trigger `signOut()` if their session has expired.
+
+---
+
+## 15. Execution Instructions for Antigravity IDE
 
 Antigravity IDE must implement these fixes sequentially by consulting [`fix_progress.md`](file:///home/rohan/Desktop/StartupX/fix_progress.md).
 1. Read the instructions for each item in `fix.md`.

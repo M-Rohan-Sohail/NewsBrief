@@ -15,7 +15,7 @@ const TONE_OPTIONS = ["high_signal", "technical_deep", "casual", "executive_brie
 import { API_URL } from '../config';
 
 export default function PreferenceConfirmationScreen({ navigation, route }: Props) {
-  const { accessToken, setHasPreferences } = useAuth();
+  const { accessToken, setHasPreferences, signOut } = useAuth();
   const [queries, setQueries] = useState<string[]>(route.params.search_queries || []);
   const [tags, setTags] = useState<string[]>(route.params.thematic_tags || []);
   const [tone, setTone] = useState(route.params.tone_bucket || "default");
@@ -53,6 +53,12 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
         body: JSON.stringify(preferencesToSave),
       });
 
+      if (response.status === 401) {
+        Alert.alert("Session Expired", "Your beta session has expired. Please enter your email to continue.");
+        await signOut();
+        return;
+      }
+
       if (!response.ok) {
         throw new Error('Failed to save preferences');
       }
@@ -64,6 +70,12 @@ export default function PreferenceConfirmationScreen({ navigation, route }: Prop
           'Authorization': `Bearer ${accessToken}`
         }
       });
+
+      if (genResponse.status === 401) {
+        Alert.alert("Session Expired", "Your beta session has expired. Please enter your email to continue.");
+        await signOut();
+        return;
+      }
       
       if (!genResponse.ok) {
         throw new Error('Failed to generate briefing');

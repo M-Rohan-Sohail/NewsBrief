@@ -1,5 +1,7 @@
 import os
 import jwt
+import uuid
+import logging
 from datetime import datetime, timedelta
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -10,10 +12,12 @@ from typing import Optional
 from db import get_db
 import models
 
+logger = logging.getLogger(__name__)
+
 JWT_SECRET = os.environ.get("JWT_SECRET") or os.environ.get("SECRET_KEY") or "dummy_jwt_secret_key_for_newsbrief_123"
 JWT_ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 60  # 60 days for persistent mobile beta sessions
+REFRESH_TOKEN_EXPIRE_DAYS = 90
 
 security = HTTPBearer()
 
@@ -45,7 +49,6 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         beta_email = "beta_tester@startupx.com"
         user = db.query(models.User).filter(models.User.email == beta_email).first()
         if not user:
-            import uuid
             user = models.User(id=uuid.uuid4(), email=beta_email, timezone="UTC", subscription_status="free", created_at=datetime.utcnow())
             db.add(user)
             db.commit()
@@ -56,11 +59,30 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
         payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id: str = payload.get("sub")
         if user_id is None:
+            logger.warning("JWT token missing 'sub' claim")
             raise credentials_exception
-    except jwt.PyJWTError:
+    except jwt.ExpiredSignatureError:
+        logger.warning(f"JWT access token expired for token prefix {token[:12]}...")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Session has expired. Please sign in again.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.PyJWTError as e:
+        logger.warning(f"JWT decode error: {e}")
         raise credentials_exception
         
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = None
+    try:
+        user_uuid = uuid.UUID(str(user_id))
+        user = db.query(models.User).filter(models.User.id == user_uuid).first()
+    except Exception:
+        pass
+
+    if not user:
+        user = db.query(models.User).filter(models.User.id == user_id).first()
+
     if user is None:
+        logger.warning(f"User not found for user_id={user_id}")
         raise credentials_exception
     return user

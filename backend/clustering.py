@@ -211,7 +211,8 @@ Articles:
         response = groq_client.chat.completions.create(
             model="qwen/qwen3.8-27b",
             messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            response_format={"type": "json_object"},
+            max_tokens=800
         )
         
         content = response.choices[0].message.content

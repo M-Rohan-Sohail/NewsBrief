@@ -168,3 +168,23 @@ This progress tracker accompanies [`fix.md`](file:///home/rohan/Desktop/StartupX
 - `[x]` **Verification:**
   - Run `python3 -m py_compile backend/clustering.py backend/generation.py backend/pipeline_stage1.py backend/main.py` -> Clean pass (code 0).
   - Run `backend/tests/test_clustering_budget.py` -> All 4 unit tests passed (budgeting, round-robin sampling, fallback clustering, card fallback).
+
+---
+
+## Phase 13: Database Foreign Key Flush, Groq OTPM Rate Limits & Mobile Token Expiration
+- `[x]` **Database Insert Ordering & Foreign Key Integrity (`backend/pipeline_stage1.py`):**
+  - Add explicit `db.flush()` immediately after persisting all `NewsCluster` records so they exist in PostgreSQL before `Card` records are inserted.
+  - Resolves `psycopg2.errors.ForeignKeyViolation: insert or update on table "cards" violates foreign key constraint "cards_cluster_id_fkey"`.
+- `[x]` **Groq Output Token per Minute (OTPM) Capping (`backend/generation.py` & `backend/clustering.py`):**
+  - Specify `max_tokens=250` on `generate_card` to ensure output stays within the 1,000 OTPM on-demand ceiling.
+  - Specify `max_tokens=350` on `generate_super_summary`.
+  - Specify `max_tokens=800` on `cluster_articles`.
+  - Resolves `Error code: 429 - on output tokens per minute (OTPM): Limit 1000, Requested 1855`.
+- `[x]` **Mobile Session Lifetime & Expiration Handling (`backend/auth.py`, `AuthContext.tsx`, `PreferenceConfirmationScreen.tsx`):**
+  - Extend `ACCESS_TOKEN_EXPIRE_MINUTES` to 60 days (`60 * 24 * 60`) so beta testers on physical devices are not logged out after 30 minutes.
+  - Safely parse UUID strings in `auth.py` and log informative warning messages on JWT expiration.
+  - In `AuthContext.tsx`, clear stale tokens if `GET /me` returns 401 on startup.
+  - In `PreferenceConfirmationScreen.tsx`, handle 401 gracefully with clear session expired alert and sign-out.
+- `[x]` **Verification:**
+  - Run `python3 -m py_compile backend/auth.py backend/pipeline_stage1.py backend/generation.py backend/clustering.py` -> Clean pass (code 0).
+  - Run `EXPO_NO_TELEMETRY=1 EXPO_OFFLINE=1 npx expo export --platform android` -> Clean pass (988 modules, code 0).
