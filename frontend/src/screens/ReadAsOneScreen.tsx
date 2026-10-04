@@ -1,76 +1,60 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
 import { useAuth } from '../context/AuthContext';
 import Markdown from 'react-native-markdown-display';
+import { API_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ReadAsOne'>;
 
-import { API_URL } from '../config';
-
-type DeepDiveResult = {
+type Chapter = {
   cluster_id: string;
-  markdown: string | null;
-  loading: boolean;
-  error: string | null;
+  title: string;
+  source_name: string;
+  body_markdown: string;
+};
+
+type ReadAsOneData = {
+  batch_date: string;
+  headline: string;
+  synthesis: string;
+  chapters: Chapter[];
 };
 
 export default function ReadAsOneScreen({ route, navigation }: Props) {
-  const { cluster_ids } = route.params;
   const { accessToken } = useAuth();
-  
-  const [results, setResults] = useState<DeepDiveResult[]>(
-    cluster_ids.map((id: string) => ({ cluster_id: id, markdown: null, loading: true, error: null }))
-  );
+  const [data, setData] = useState<ReadAsOneData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchDeepDive = async (cluster_id: string) => {
+  const fetchReadAsOne = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const response = await fetch(`${API_URL}/content/deep-dive`, {
-        method: 'POST',
+      const response = await fetch(`${API_URL}/briefing/today/read-as-one`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ cluster_id }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to load deep dive');
+        throw new Error('Unable to compile Read as One briefing right now.');
       }
 
-      const data = await response.json();
-      setResults(prev => prev.map(item => 
-        item.cluster_id === cluster_id 
-          ? { ...item, loading: false, markdown: data.body_markdown }
-          : item
-      ));
+      const result = await response.json();
+      setData(result);
     } catch (err: any) {
-      setResults(prev => prev.map(item => 
-        item.cluster_id === cluster_id 
-          ? { ...item, loading: false, error: err.message }
-          : item
-      ));
+      setError(err.message || 'An unexpected error occurred.');
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    // Sequential fetching as per user feedback
-    let isCancelled = false;
-    
-    const loadSequentially = async () => {
-      for (const id of cluster_ids) {
-        if (isCancelled) break;
-        await fetchDeepDive(id);
-      }
-    };
-    
-    loadSequentially();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [cluster_ids, accessToken]);
+    fetchReadAsOne();
+  }, [accessToken]);
 
   return (
     <View style={styles.container}>
@@ -82,67 +66,145 @@ export default function ReadAsOneScreen({ route, navigation }: Props) {
         <View style={{ width: 60 }} />
       </View>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {results.map((item, index) => (
-          <View key={item.cluster_id} style={styles.sectionContainer}>
-            {item.loading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="small" color="#3B82F6" />
-                <Text style={styles.loadingText}>Generating chapter {index + 1}...</Text>
-              </View>
-            ) : item.error ? (
-              <View style={styles.loadingContainer}>
-                <Text style={styles.errorText}>Failed to load chapter {index + 1}: {item.error}</Text>
-              </View>
-            ) : (
-              <Markdown style={markdownStyles}>
-                {item.markdown || ""}
-              </Markdown>
-            )}
-            
-            {index < results.length - 1 && (
-              <View style={styles.divider} />
-            )}
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#3B82F6" />
+          <Text style={styles.loadingText}>Compiling executive briefing...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.centerContainer}>
+          <Text style={styles.errorTitle}>Could not load briefing</Text>
+          <Text style={styles.errorSubText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchReadAsOne}>
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      ) : data ? (
+        <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+          {/* Executive Overview Header */}
+          <View style={styles.overviewBox}>
+            <Text style={styles.overviewBadge}>DAILY SYNTHESIS</Text>
+            <Text style={styles.overviewHeadline}>{data.headline}</Text>
+            <Text style={styles.overviewSynthesis}>{data.synthesis}</Text>
           </View>
-        ))}
-      </ScrollView>
+
+          {/* Chapters */}
+          {data.chapters.map((chapter, index) => (
+            <View key={chapter.cluster_id || index} style={styles.chapterCard}>
+              <View style={styles.chapterHeader}>
+                <View style={styles.chapterNumberBadge}>
+                  <Text style={styles.chapterNumberText}>CHAPTER {index + 1}</Text>
+                </View>
+                <Text style={styles.chapterSource}>{chapter.source_name}</Text>
+              </View>
+
+              <Markdown style={markdownStyles}>
+                {chapter.body_markdown}
+              </Markdown>
+
+              {index < data.chapters.length - 1 && <View style={styles.divider} />}
+            </View>
+          ))}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
 
 const markdownStyles = StyleSheet.create({
-  body: { color: '#E2E8F0', fontSize: 16, lineHeight: 26 },
-  heading1: { color: '#FFF', fontSize: 28, fontWeight: 'bold', marginTop: 24, marginBottom: 12 },
-  heading2: { color: '#FFF', fontSize: 22, fontWeight: 'bold', marginTop: 20, marginBottom: 10 },
-  heading3: { color: '#FFF', fontSize: 18, fontWeight: 'bold', marginTop: 16, marginBottom: 8 },
-  paragraph: { marginBottom: 16 },
+  body: { color: '#E2E8F0', fontSize: 15, lineHeight: 24 },
+  heading1: { color: '#FFF', fontSize: 24, fontWeight: '800', marginTop: 16, marginBottom: 12 },
+  heading2: { color: '#60A5FA', fontSize: 18, fontWeight: '700', marginTop: 20, marginBottom: 10, letterSpacing: -0.2 },
+  heading3: { color: '#93C5FD', fontSize: 16, fontWeight: '600', marginTop: 14, marginBottom: 8 },
+  paragraph: { marginBottom: 14, lineHeight: 24 },
   list_item: { marginBottom: 8 },
-  bullet_list: { marginBottom: 16 },
-  strong: { color: '#FFF', fontWeight: 'bold' },
-  em: { fontStyle: 'italic', color: '#CBD5E1' },
+  bullet_list: { marginBottom: 14 },
+  strong: { color: '#FFF', fontWeight: '700' },
+  em: { fontStyle: 'italic', color: '#94A3B8' },
+  hr: { backgroundColor: 'rgba(255, 255, 255, 0.1)', height: 1, marginVertical: 18 },
 });
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0F172A' },
+  container: { flex: 1, backgroundColor: '#0A0F1D' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 50,
+    paddingTop: Platform.OS === 'ios' ? 52 : 42,
     paddingBottom: 16,
-    paddingHorizontal: 16,
-    backgroundColor: '#1E293B',
+    paddingHorizontal: 20,
+    backgroundColor: '#0F172A',
     borderBottomWidth: 1,
-    borderBottomColor: '#334155'
+    borderBottomColor: '#1E293B',
   },
   backButton: { width: 60 },
-  backButtonText: { color: '#3B82F6', fontSize: 16, fontWeight: '600' },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
+  backButtonText: { color: '#60A5FA', fontSize: 16, fontWeight: '600' },
+  headerTitle: { color: '#FFF', fontSize: 17, fontWeight: '800', letterSpacing: 0.2 },
   scrollView: { flex: 1 },
-  scrollContent: { padding: 24, paddingBottom: 60 },
-  sectionContainer: { marginBottom: 24 },
-  loadingContainer: { padding: 40, alignItems: 'center', justifyContent: 'center' },
-  loadingText: { color: '#94A3B8', marginTop: 12, fontSize: 14 },
-  errorText: { color: '#EF4444', fontSize: 14 },
-  divider: { height: 1, backgroundColor: '#334155', marginVertical: 32 }
+  scrollContent: { padding: 20, paddingBottom: 60 },
+  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
+  loadingText: { color: '#94A3B8', marginTop: 14, fontSize: 15, fontWeight: '500' },
+  errorTitle: { color: '#EF4444', fontSize: 18, fontWeight: '700', marginBottom: 8 },
+  errorSubText: { color: '#94A3B8', fontSize: 14, textAlign: 'center', marginBottom: 20 },
+  retryButton: { backgroundColor: '#3B82F6', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
+  retryButtonText: { color: '#FFF', fontWeight: '700', fontSize: 15 },
+  overviewBox: {
+    backgroundColor: 'rgba(59, 130, 246, 0.08)',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.25)',
+    marginBottom: 28,
+  },
+  overviewBadge: {
+    color: '#60A5FA',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 1.2,
+    marginBottom: 8,
+  },
+  overviewHeadline: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '800',
+    lineHeight: 28,
+    marginBottom: 12,
+  },
+  overviewSynthesis: {
+    color: '#CBD5E1',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  chapterCard: {
+    marginBottom: 24,
+  },
+  chapterHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  chapterNumberBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  chapterNumberText: {
+    color: '#94A3B8',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  chapterSource: {
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#1E293B',
+    marginVertical: 28,
+  },
 });

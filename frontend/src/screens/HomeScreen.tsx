@@ -132,6 +132,35 @@ export default function HomeScreen({ navigation }: Props) {
     );
   }
 
+  const renderSynthesisContent = (text: string) => {
+    if (!text) return null;
+    const lines = text.split('\n').filter(l => l.trim().length > 0);
+    return lines.map((line, idx) => {
+      const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
+      if (isBullet) {
+        const cleanLine = line.replace(/^[•\-]\s*/, '');
+        const parts = cleanLine.split(/(\*\*.*?\*\*)/g);
+        return (
+          <View key={idx} style={styles.synthesisBulletRow}>
+            <Text style={styles.synthesisBulletText}>
+              {parts.map((p, pIdx) => {
+                if (p.startsWith('**') && p.endsWith('**')) {
+                  return <Text key={pIdx} style={styles.synthesisBold}>{p.replace(/\*\*/g, '')}</Text>;
+                }
+                return <Text key={pIdx}>{p}</Text>;
+              })}
+            </Text>
+          </View>
+        );
+      }
+      return (
+        <Text key={idx} style={styles.cardSynthesis}>
+          {line}
+        </Text>
+      );
+    });
+  };
+
   return (
     <LinearGradient colors={['#0F172A', '#1E1B4B']} style={styles.gradientContainer}>
         <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.scrollView}>
@@ -172,7 +201,7 @@ export default function HomeScreen({ navigation }: Props) {
     
           <View style={styles.card}>
             <Text style={styles.cardHeadline}>{briefing.super_summary.headline}</Text>
-            <Text style={styles.cardSynthesis}>{briefing.super_summary.synthesis}</Text>
+            {renderSynthesisContent(briefing.super_summary.synthesis)}
           </View>
     
           <TouchableOpacity 
@@ -215,6 +244,24 @@ const styles = StyleSheet.create({
   card: { backgroundColor: 'rgba(255, 255, 255, 0.05)', borderRadius: 20, padding: 24, marginBottom: 32, borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)', shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
   cardHeadline: { fontSize: 24, fontWeight: '800', color: '#FFF', marginBottom: 16, lineHeight: 32, letterSpacing: -0.5 },
   cardSynthesis: { fontSize: 16, color: '#CBD5E1', lineHeight: 26, fontWeight: '400' },
+  synthesisBulletRow: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  synthesisBulletText: {
+    color: '#E2E8F0',
+    fontSize: 14,
+    lineHeight: 22,
+  },
+  synthesisBold: {
+    color: '#60A5FA',
+    fontWeight: '700',
+  },
   startButton: { backgroundColor: '#4ade80', paddingVertical: 18, borderRadius: 16, alignItems: 'center', shadowColor: '#4ade80', shadowOpacity: 0.4, shadowOffset: { width: 0, height: 6 }, shadowRadius: 15, marginBottom: 16 },
   startButtonText: { color: '#0f172a', fontSize: 18, fontWeight: '800', letterSpacing: 0.5 },
   premiumButton: { backgroundColor: 'transparent', paddingVertical: 18, borderRadius: 16, alignItems: 'center', borderWidth: 1.5, borderColor: '#3b82f6' },

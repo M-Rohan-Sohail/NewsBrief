@@ -1,14 +1,95 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity, Alert, Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Dimensions, 
+  FlatList, 
+  TouchableOpacity, 
+  ScrollView,
+  Platform 
+} from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList, Card } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useRevenueCat } from '../context/RevenueCatContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { API_URL } from '../config';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CardMode'>;
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
-import { API_URL } from '../config';
+
+interface SourceTheme {
+  primary: string;
+  gradient: [string, string, string];
+  badgeBg: string;
+  badgeBorder: string;
+  badgeText: string;
+  icon: string;
+  tag: string;
+  buttonBg: string;
+  buttonText: string;
+}
+
+function getSourceTheme(sourceName: string): SourceTheme {
+  const s = (sourceName || '').toLowerCase();
+  
+  if (s.includes('arxiv')) {
+    return {
+      primary: '#10B981',
+      gradient: ['#064E3B', '#022C22', '#0A0F1D'],
+      badgeBg: 'rgba(16, 185, 129, 0.15)',
+      badgeBorder: 'rgba(16, 185, 129, 0.4)',
+      badgeText: '#34D399',
+      icon: '🔬',
+      tag: 'ARXIV RESEARCH',
+      buttonBg: '#10B981',
+      buttonText: '#042F2E'
+    };
+  }
+  
+  if (s.includes('github')) {
+    return {
+      primary: '#A855F7',
+      gradient: ['#3B0764', '#1E1B4B', '#0A0F1D'],
+      badgeBg: 'rgba(168, 85, 247, 0.15)',
+      badgeBorder: 'rgba(168, 85, 247, 0.4)',
+      badgeText: '#C084FC',
+      icon: '💻',
+      tag: 'GITHUB TRENDING',
+      buttonBg: '#A855F7',
+      buttonText: '#2E1065'
+    };
+  }
+  
+  if (s.includes('hacker news') || s.includes('hn')) {
+    return {
+      primary: '#F97316',
+      gradient: ['#431407', '#1C1917', '#0A0F1D'],
+      badgeBg: 'rgba(249, 115, 22, 0.15)',
+      badgeBorder: 'rgba(249, 115, 22, 0.4)',
+      badgeText: '#FB923C',
+      icon: '🔶',
+      tag: 'HACKER NEWS',
+      buttonBg: '#F97316',
+      buttonText: '#431407'
+    };
+  }
+  
+  // Stratechery, Tech media, or general tech feeds
+  return {
+    primary: '#EC4899',
+    gradient: ['#4C0519', '#1E1B4B', '#0A0F1D'],
+    badgeBg: 'rgba(236, 72, 153, 0.15)',
+    badgeBorder: 'rgba(236, 72, 153, 0.4)',
+    badgeText: '#F472B6',
+    icon: '📰',
+    tag: (sourceName || 'TECH INTELLIGENCE').toUpperCase(),
+    buttonBg: '#EC4899',
+    buttonText: '#4C0519'
+  };
+}
 
 export default function CardModeScreen({ route, navigation }: Props) {
   const { cards } = route.params;
@@ -19,7 +100,6 @@ export default function CardModeScreen({ route, navigation }: Props) {
 
   const flatListRef = useRef<FlatList>(null);
 
-  // Track the view when a card becomes fully visible
   useEffect(() => {
     if (cards.length > 0 && !locked) {
       trackCardView(cards[currentIndex].id);
@@ -36,10 +116,7 @@ export default function CardModeScreen({ route, navigation }: Props) {
         },
       });
 
-      if (!response.ok) {
-        console.error("Failed to track view");
-        return;
-      }
+      if (!response.ok) return;
 
       const data = await response.json();
       if (data.limit_reached) {
@@ -51,42 +128,98 @@ export default function CardModeScreen({ route, navigation }: Props) {
     }
   };
 
+  const renderBullet = (bullet: string, idx: number, theme: SourceTheme) => {
+    // Format bold lead-in tags if present e.g. **Core Development:**
+    const parts = bullet.split(/(\*\*.*?\*\*)/g);
+    
+    return (
+      <View key={idx} style={[styles.bulletCard, { borderColor: 'rgba(255, 255, 255, 0.08)' }]}>
+        <View style={[styles.bulletIndicator, { backgroundColor: theme.primary }]} />
+        <Text style={styles.bulletText}>
+          {parts.map((part, pIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              return (
+                <Text key={pIdx} style={[styles.bulletBold, { color: theme.badgeText }]}>
+                  {part.replace(/\*\*/g, '')}{' '}
+                </Text>
+              );
+            }
+            return <Text key={pIdx}>{part}</Text>;
+          })}
+        </Text>
+      </View>
+    );
+  };
+
   const renderCard = ({ item, index }: { item: Card; index: number }) => {
+    const theme = getSourceTheme(item.source_name);
+
     return (
       <View style={[styles.cardContainer, { height: SCREEN_HEIGHT }]}>
-        <View style={styles.cardContent}>
-          <Text style={styles.sourceText}>{item.source_name}</Text>
-          <Text style={styles.headline}>{item.headline}</Text>
-          
-          <View style={styles.bulletsContainer}>
-            {item.bullets.map((bullet, idx) => (
-              <View key={idx} style={styles.bulletRow}>
-                <View style={styles.bulletDot} />
-                <Text style={styles.bulletText}>{bullet}</Text>
-              </View>
-            ))}
+        <LinearGradient 
+          colors={theme.gradient} 
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 0.9 }}
+        />
+
+        {/* Top Floating Navigation Bar */}
+        <View style={styles.topBar}>
+          <View style={[styles.sourceBadge, { backgroundColor: theme.badgeBg, borderColor: theme.badgeBorder }]}>
+            <Text style={styles.sourceIcon}>{theme.icon}</Text>
+            <Text style={[styles.sourceBadgeText, { color: theme.badgeText }]}>{theme.tag}</Text>
+          </View>
+
+          <View style={styles.topRightControls}>
+            <View style={styles.progressBadge}>
+              <Text style={styles.progressText}>{index + 1} / {cards.length}</Text>
+            </View>
+
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => navigation.goBack()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={styles.deepDiveButton} 
-          onPress={() => {
-            if (isPremium) {
-               navigation.navigate('DeepDive', { cluster_id: item.cluster_id })
-            } else {
-               navigation.navigate('Paywall');
-            }
-          }}
+        {/* Scrollable Card Body (Prevents Any Button Clipping) */}
+        <ScrollView 
+          style={styles.bodyScrollView} 
+          contentContainerStyle={styles.bodyScrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.deepDiveButtonText}>Read Deep Dive</Text>
-        </TouchableOpacity>
+          <Text style={styles.headline}>{item.headline}</Text>
 
-        <TouchableOpacity 
-          style={styles.closeButton} 
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.closeButtonText}>✕</Text>
-        </TouchableOpacity>
+          <View style={styles.bulletsContainer}>
+            {item.bullets.map((bullet, idx) => renderBullet(bullet, idx, theme))}
+          </View>
+        </ScrollView>
+
+        {/* Floating Bottom Bar with Deep Dive Action */}
+        <View style={styles.bottomBarContainer}>
+          <LinearGradient
+            colors={['transparent', 'rgba(10, 15, 29, 0.95)', '#0A0F1D']}
+            style={styles.bottomBarFade}
+          />
+          <TouchableOpacity 
+            style={[styles.deepDiveButton, { backgroundColor: theme.buttonBg }]} 
+            activeOpacity={0.85}
+            onPress={() => {
+              if (isPremium) {
+                navigation.navigate('DeepDive', { cluster_id: item.cluster_id });
+              } else {
+                navigation.navigate('Paywall');
+              }
+            }}
+          >
+            <Text style={[styles.deepDiveButtonText, { color: theme.buttonText }]}>
+              Read Deep Dive ➔
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -121,88 +254,147 @@ export default function CardModeScreen({ route, navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: '#0A0F1D',
   },
   cardContainer: {
     width: SCREEN_WIDTH,
-    justifyContent: 'center',
-    padding: 24,
-    backgroundColor: '#0F172A',
+    position: 'relative',
   },
-  cardContent: {
-    flex: 1,
-    justifyContent: 'center',
+  topBar: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 54 : 44,
+    left: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 20,
   },
-  sourceText: {
-    color: '#3B82F6',
-    fontSize: 16,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+  sourceBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  sourceIcon: {
+    fontSize: 14,
+    marginRight: 6,
+  },
+  sourceBadgeText: {
+    fontSize: 11,
+    fontWeight: '800',
     letterSpacing: 1,
-    marginBottom: 16,
+    textTransform: 'uppercase',
+  },
+  topRightControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressBadge: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 14,
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  progressText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  closeButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  closeButtonText: {
+    color: '#FFF',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  bodyScrollView: {
+    flex: 1,
+  },
+  bodyScrollContent: {
+    paddingHorizontal: 22,
+    paddingTop: Platform.OS === 'ios' ? 120 : 105,
+    paddingBottom: 130, // Guarantees zero clipping behind the bottom button
   },
   headline: {
-    color: '#FFF',
-    fontSize: 32,
+    color: '#FFFFFF',
+    fontSize: 26,
     fontWeight: '800',
-    marginBottom: 32,
-    lineHeight: 40,
+    marginBottom: 24,
+    lineHeight: 34,
+    letterSpacing: -0.4,
   },
   bulletsContainer: {
-    marginTop: 16,
+    marginTop: 4,
   },
-  bulletRow: {
+  bulletCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginBottom: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    padding: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: 14,
   },
-  bulletDot: {
-    width: 8,
-    height: 8,
+  bulletIndicator: {
+    width: 7,
+    height: 7,
     borderRadius: 4,
-    backgroundColor: '#94A3B8',
     marginTop: 8,
     marginRight: 12,
   },
   bulletText: {
     color: '#E2E8F0',
-    fontSize: 18,
-    lineHeight: 28,
+    fontSize: 15,
+    lineHeight: 23,
     flex: 1,
+    fontWeight: '400',
+  },
+  bulletBold: {
+    fontWeight: '700',
+  },
+  bottomBarContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 38 : 28,
+    zIndex: 10,
+  },
+  bottomBarFade: {
+    position: 'absolute',
+    top: -30,
+    left: 0,
+    right: 0,
+    height: 120,
   },
   deepDiveButton: {
-    position: 'absolute',
-    bottom: 48,
-    left: 24,
-    right: 24,
-    backgroundColor: '#3B82F6',
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: 14,
     alignItems: 'center',
-    shadowColor: '#3B82F6',
-    shadowOpacity: 0.3,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
     shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 12,
+    shadowRadius: 10,
+    elevation: 4,
   },
   deepDiveButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  closeButton: {
-    position: 'absolute',
-    top: 48,
-    right: 24,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

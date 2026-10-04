@@ -124,7 +124,7 @@ def run_stage1():
         logger.info(f"Flushed {len(cluster_records)} clusters to database. Generating base cards...")
 
         # Step B: Pre-generate Base Cards for each flushed cluster
-        for cluster_id, cluster_data, title in cluster_records:
+        for cluster_id, cluster_data, title in cluster_records[:12]:
             cards_by_tone = pre_generate_base_cards(cluster_data, ["high_signal", "technical_deep"])
             
             for tone, card_data in cards_by_tone.items():
@@ -140,8 +140,25 @@ def run_stage1():
                 )
                 db.add(db_card)
                 
-            # Pacing sleep between clusters to avoid bursting Groq RPM limits and triggering cooldowns
+            # Pacing sleep between clusters to avoid bursting Groq RPM limits
             time.sleep(1.2)
+
+        # Step C: Pre-generate Deep Dives for the top clusters so Read as One is instant
+        logger.info("Pre-generating Deep Dives for top clusters...")
+        for cluster_id, cluster_data, title in cluster_records[:4]:
+            try:
+                body_md = pre_generate_deep_dive(cluster_data)
+                dd = DeepDive(
+                    cluster_id=cluster_id,
+                    title=f"Deep Dive: {title}",
+                    body_markdown=body_md,
+                    pre_generated=True,
+                    generated_at=now
+                )
+                db.add(dd)
+                time.sleep(2.0)
+            except Exception as e:
+                logger.warning(f"Could not pre-generate deep dive for '{title}': {e}")
                 
         # 6. Commit Transaction
         logger.info("Committing Stage 1 pipeline data to database...")

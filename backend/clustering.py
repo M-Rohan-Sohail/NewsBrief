@@ -126,122 +126,97 @@ def fallback_clustering(articles: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     logger.info(f"Fallback clustering grouped {len(articles)} articles into {len(final_clusters)} clusters.")
     return final_clusters
 
+def _infer_category(art: Dict[str, Any]) -> str:
+    title = (art.get("title") or "").lower()
+    source = (art.get("source_name") or art.get("source") or "").lower()
+    content = str(art.get("content") or "").lower()
+    text = f"{title} {source} {content[:200]}"
+    
+    if "arxiv" in source or "paper" in text or "benchmark" in text:
+        return "AI Research & Methodology"
+    if "github" in source or "repo" in text or "framework" in text or "library" in text:
+        return "Open Source & Developer Tools"
+    if any(k in text for k in ["gpu", "cuda", "hardware", "datacenter", "chip", "nvidia", "tpu", "inference engine", "vllm", "cluster"]):
+        return "AI Hardware & Infrastructure"
+    if any(k in text for k in ["llm", "gpt", "model", "weights", "diffusion", "reasoning", "multimodal"]):
+        return "AI Models & Releases"
+    if "security" in text or "cve" in text or "vulnerability" in text:
+        return "Security & Privacy"
+    return "Tech Strategy & Business"
+
+def _infer_tags(art: Dict[str, Any]) -> List[str]:
+    text = f"{art.get('title', '')} {str(art.get('content', ''))[:300]}".lower()
+    tags = []
+    tag_map = {
+        "LLMs": ["llm", "large language model", "gpt", "qwen", "claude", "llama"],
+        "AI Infrastructure": ["gpu", "datacenter", "infrastructure", "hardware", "cuda", "accelerator", "vllm"],
+        "AI Research": ["arxiv", "preprint", "neural", "attention", "transformer", "diffusion"],
+        "Developer Tools": ["github", "developer", "framework", "library", "sdk", "cli"],
+        "Open Source": ["open source", "open-source", "apache", "mit license", "weights"],
+        "Tech News": ["startup", "venture", "acquisition", "funding"]
+    }
+    for tag, keywords in tag_map.items():
+        if any(k in text for k in keywords):
+            tags.append(tag)
+    return tags or ["Tech News"]
+
 def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str] = None) -> List[Dict[str, Any]]:
     """
-    Group articles into thematic clusters using the Groq LLM with a target budget of ~4,800 to 5,000 input tokens.
-    Falls back gracefully to domain clustering if Groq rate limits or fails.
+    Cluster articles using local sentence-transformer embeddings to produce 12-25
+    topic-coherent, fine-grained story clusters without Groq token limit consumption.
     """
     if not articles:
         return []
 
-    if not groq_client:
-        logger.warning("GROQ_API_KEY not set. Using domain-based fallback clustering.")
-        return fallback_clustering(articles)
+    embedder = get_embedder()
+    texts = [f"{a.get('title', '')}. {str(a.get('content', ''))[:350]}" for a in articles]
+    embeddings = embedder.encode(texts, convert_to_tensor=True)
+    cosine_scores = util.cos_sim(embeddings, embeddings)
 
-    # Balance articles across sources (round-robin) to ensure broad topic diversity
-    sources: Dict[str, List[Dict[str, Any]]] = {}
-    for art in articles:
-        src = art.get("source_name") or art.get("source") or "Web"
-        sources.setdefault(src, []).append(art)
+    similarity_threshold = 0.52
+    unassigned = set(range(len(articles)))
+    clusters = []
 
-    balanced = []
-    while len(balanced) < len(articles):
-        added = False
-        for src in list(sources.keys()):
-            if sources[src]:
-                balanced.append(sources[src].pop(0))
-                added = True
-        if not added:
+    # 1. Group articles by high semantic similarity (iterative community leader)
+    while unassigned:
+        best_leader = None
+        best_neighbors = []
+        for i in unassigned:
+            neighbors = [j for j in unassigned if cosine_scores[i][j].item() >= similarity_threshold]
+            if len(neighbors) > len(best_neighbors):
+                best_leader = i
+                best_neighbors = neighbors
+
+        if not best_neighbors or len(best_neighbors) == 1:
+            # Remaining items form distinct individual story clusters
+            for i in list(unassigned):
+                art = articles[i]
+                clusters.append({
+                    "canonical_title": art.get("title", "Tech Update"),
+                    "category": _infer_category(art),
+                    "representative_snippet": str(art.get("content", ""))[:200].replace("\n", " ").strip(),
+                    "matched_tags": _infer_tags(art),
+                    "articles": [art]
+                })
             break
 
-    # Budget target: ~17,500 characters for articles (~4,700 tokens)
-    # + ~1,000 char prompt overhead (~250 tokens) = ~4,950 tokens total (leaves 2,050 token buffer below 7,000 limit)
-    MAX_CHARS = 17500
-    MAX_ARTICLES = 65
-    article_summaries = ""
-    included_articles = []
+        cluster_arts = [articles[idx] for idx in best_neighbors]
+        leader_art = articles[best_leader]
+        clusters.append({
+            "canonical_title": leader_art.get("title", "Tech Development"),
+            "category": _infer_category(leader_art),
+            "representative_snippet": str(leader_art.get("content", ""))[:200].replace("\n", " ").strip(),
+            "matched_tags": _infer_tags(leader_art),
+            "articles": cluster_arts
+        })
+        for idx in best_neighbors:
+            unassigned.remove(idx)
 
-    for idx, article in enumerate(balanced):
-        title = str(article.get("title", ""))[:80].strip()
-        source = str(article.get("source_name") or article.get("source") or "Web")[:20].strip()
-        snippet = str(article.get("content", ""))[:180].replace("\n", " ").strip()
-        line = f"[{idx}] {title} | Source: {source} | Snippet: {snippet}...\n"
-
-        if len(article_summaries) + len(line) > MAX_CHARS or len(included_articles) >= MAX_ARTICLES:
-            break
-
-        article_summaries += line
-        included_articles.append(article)
-
-    logger.info(
-        f"Clustering {len(included_articles)} articles with context size {len(article_summaries)} chars "
-        f"(~{int(len(article_summaries)/3.7)} tokens)..."
-    )
-
-    if thematic_tags:
-        tags_str = ", ".join(thematic_tags)
-        prompt = f"""You are a news editor. Group the following articles into logical thematic clusters based on these tags: {tags_str}.
-An article can only belong to ONE cluster. If an article doesn't fit any tag, group it under "Other".
-"""
-    else:
-        prompt = f"""You are a news editor. Group the following articles into logical thematic clusters (e.g., "AI Models", "Open Source", "Security").
-Discover the best categories autonomously based on the provided articles.
-An article can only belong to ONE cluster.
-"""
-
-    prompt += f"""
-Output MUST be a valid JSON object matching this schema exactly:
-{{
-  "clusters": [
-    {{
-      "canonical_title": "A short, overarching title for this cluster",
-      "category": "The overarching broad category this fits into",
-      "representative_snippet": "A 1-2 sentence synthesis of what this cluster is about",
-      "matched_tags": ["tag1", "tag2"],
-      "article_indices": [0, 2] // The integer indices of the articles in this cluster
-    }}
-  ]
-}}
-
-Articles:
-{article_summaries}
-"""
-
-    try:
-        response = groq_client.chat.completions.create(
-            model="qwen/qwen3.8-27b",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"},
-            max_tokens=800
-        )
-        
-        content = response.choices[0].message.content
-        parsed = json.loads(content)
-        
-        clusters_data = parsed.get("clusters", [])
-        
-        # Hydrate article indices with actual article objects
-        final_clusters = []
-        for c in clusters_data:
-            cluster_articles_list = []
-            for idx in c.get("article_indices", []):
-                if 0 <= idx < len(included_articles):
-                    cluster_articles_list.append(included_articles[idx])
-            
-            c["articles"] = cluster_articles_list
-            del c["article_indices"] # Clean up
-            if cluster_articles_list:
-                final_clusters.append(c)
-                
-        if final_clusters:
-            return final_clusters
-        else:
-            logger.warning("Groq returned empty clusters, using fallback clustering.")
-            return fallback_clustering(included_articles or articles)
-        
-    except Exception as e:
-        logger.error(f"Clustering failed: {e}. Activating smart fallback clustering...")
-        return fallback_clustering(included_articles or articles)
+    # Sort clusters by number of articles and limit to top 20 most significant
+    clusters.sort(key=lambda c: len(c.get("articles", [])), reverse=True)
+    final_clusters = clusters[:20]
+    logger.info(f"Generated {len(final_clusters)} fine-grained clusters from {len(articles)} articles.")
+    return final_clusters
 
 def compute_centroid(canonical_title: str, representative_snippet: str) -> List[float]:
     """

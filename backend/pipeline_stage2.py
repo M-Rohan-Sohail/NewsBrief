@@ -44,14 +44,32 @@ def run_stage2():
                 pref.preference_embedding = compute_user_embedding(pref)
                 db.commit() # Save the embedding
             
-            # 2. pgvector: Fetch Top 6 clusters for today matching this user
-            logger.info(f"Finding top clusters for user {user_id}")
-            matched_clusters = db.query(NewsCluster).filter(
+            # 2. pgvector: Fetch High-Relevancy clusters for today matching this user
+            logger.info(f"Finding top high-relevancy clusters for user {user_id}")
+            cluster_results = db.query(
+                NewsCluster,
+                NewsCluster.embedding.cosine_distance(pref.preference_embedding).label("dist")
+            ).filter(
                 NewsCluster.batch_date == today,
                 NewsCluster.embedding.isnot(None)
-            ).order_by(
-                NewsCluster.embedding.cosine_distance(pref.preference_embedding)
-            ).limit(6).all()
+            ).order_by("dist").all()
+            
+            matched_clusters = []
+            for c, dist in cluster_results:
+                if pref.exclude_keywords:
+                    text_blob = f"{c.canonical_title} {c.representative_snippet}".lower()
+                    if any(kw.lower() in text_blob for kw in pref.exclude_keywords):
+                        continue
+                        
+                # Enforce strict high relevancy (distance <= 0.65)
+                if dist <= 0.65:
+                    matched_clusters.append(c)
+                elif not matched_clusters:
+                    # Guarantee at least 1 cluster if no stories pass strict threshold
+                    matched_clusters.append(c)
+                    
+                if len(matched_clusters) >= 6:
+                    break
             
             if not matched_clusters:
                 logger.warning(f"No clusters found for today. Skipping user {user_id}.")
@@ -59,10 +77,15 @@ def run_stage2():
                 
             # 3. Fetch corresponding Cards in the user's tone_bucket
             cluster_ids = [c.id for c in matched_clusters]
+            effective_tone = pref.tone_bucket if pref.tone_bucket in ["high_signal", "technical_deep", "executive_brief", "casual"] else "high_signal"
             cards = db.query(Card).filter(
                 Card.cluster_id.in_(cluster_ids),
-                Card.tone_bucket == pref.tone_bucket
+                Card.tone_bucket == effective_tone
             ).all()
+            if not cards:
+                cards = db.query(Card).filter(
+                    Card.cluster_id.in_(cluster_ids)
+                ).all()
             
             # If a specific tone card doesn't exist, we might fallback to another,
             # but for this MVP, we assume Stage 1 pre-generated all necessary tones.

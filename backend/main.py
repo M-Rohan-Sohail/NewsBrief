@@ -585,13 +585,31 @@ def generate_briefing_now(
         pref.preference_embedding = compute_user_embedding(pref)
         db.commit()
         
-    # 2. Match clusters
-    matched_clusters = db.query(models.NewsCluster).filter(
+    # 2. Match high-relevance clusters
+    cluster_results = db.query(
+        models.NewsCluster,
+        models.NewsCluster.embedding.cosine_distance(pref.preference_embedding).label("dist")
+    ).filter(
         models.NewsCluster.batch_date == today,
         models.NewsCluster.embedding.isnot(None)
-    ).order_by(
-        models.NewsCluster.embedding.cosine_distance(pref.preference_embedding)
-    ).limit(6).all()
+    ).order_by("dist").all()
+    
+    matched_clusters = []
+    for c, dist in cluster_results:
+        if pref.exclude_keywords:
+            text_blob = f"{c.canonical_title} {c.representative_snippet}".lower()
+            if any(kw.lower() in text_blob for kw in pref.exclude_keywords):
+                continue
+                
+        # Enforce strict high relevancy (distance <= 0.65)
+        if dist <= 0.65:
+            matched_clusters.append(c)
+        elif not matched_clusters:
+            # Guarantee at least 1 cluster if no stories pass strict threshold
+            matched_clusters.append(c)
+            
+        if len(matched_clusters) >= 6:
+            break
     
     if not matched_clusters:
         raise HTTPException(status_code=500, detail="Could not match any clusters")
@@ -599,10 +617,15 @@ def generate_briefing_now(
     cluster_ids = [c.id for c in matched_clusters]
     
     # 3. Retrieve Cards
+    effective_tone = pref.tone_bucket if pref.tone_bucket in ["high_signal", "technical_deep", "executive_brief", "casual"] else "high_signal"
     cards = db.query(models.Card).filter(
         models.Card.cluster_id.in_(cluster_ids),
-        models.Card.tone_bucket == pref.tone_bucket
+        models.Card.tone_bucket == effective_tone
     ).all()
+    if not cards:
+        cards = db.query(models.Card).filter(
+            models.Card.cluster_id.in_(cluster_ids)
+        ).all()
     card_ids = [c.id for c in cards]
     
     # 4. SuperSummary
@@ -610,7 +633,7 @@ def generate_briefing_now(
     super_summary = db.query(models.SuperSummary).filter(
         models.SuperSummary.batch_date == today,
         models.SuperSummary.cluster_set_key == cluster_set_key,
-        models.SuperSummary.tone_bucket == pref.tone_bucket
+        models.SuperSummary.tone_bucket == effective_tone
     ).first()
     
     if not super_summary:
@@ -620,12 +643,12 @@ def generate_briefing_now(
             for c in matched_clusters
         ]
         import uuid
-        ss_data = generate_super_summary(cluster_dicts, pref.tone_bucket)
+        ss_data = generate_super_summary(cluster_dicts, effective_tone)
         super_summary = models.SuperSummary(
             id=uuid.uuid4(),
             batch_date=today,
             cluster_set_key=cluster_set_key,
-            tone_bucket=pref.tone_bucket,
+            tone_bucket=effective_tone,
             headline=ss_data.get("headline", "Your Daily Briefing"),
             synthesis=ss_data.get("synthesis", ""),
             contributing_cluster_ids=cluster_ids
@@ -714,7 +737,7 @@ def get_deep_dive(
                 articles_text += f"\n\n--- Source {idx+1}: {ref.get('title')} ---\n{text}"
                 
     if not articles_text.strip():
-        raise HTTPException(status_code=500, detail="Failed to extract any text for this cluster's articles")
+        articles_text = f"Title: {cluster.canonical_title}\nOverview: {cluster.representative_snippet}"
         
     # 4. Generate Deep Dive via LLM
     markdown_content = generation.generate_deep_dive(cluster.canonical_title, articles_text)
@@ -736,6 +759,46 @@ def get_deep_dive(
         title=new_deep_dive.title,
         body_markdown=new_deep_dive.body_markdown
     )
+
+@app.get("/briefing/today/read-as-one")
+def get_read_as_one(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    briefing = db.query(models.UserBriefing)\
+        .filter(models.UserBriefing.user_id == current_user.id)\
+        .order_by(models.UserBriefing.batch_date.desc())\
+        .first()
+
+    if not briefing:
+        raise HTTPException(status_code=404, detail="No briefing found for today")
+
+    super_summary = db.query(models.SuperSummary).filter(models.SuperSummary.id == briefing.super_summary_id).first()
+    cards = db.query(models.Card).filter(models.Card.id.in_(briefing.card_ids)).all()
+
+    chapters = []
+    for c in cards:
+        # Check DB for pre-generated deep dive
+        dd = db.query(models.DeepDive).filter(models.DeepDive.cluster_id == c.cluster_id).first()
+        if dd and dd.body_markdown and "Error Generating Deep Dive" not in dd.body_markdown:
+            body_md = dd.body_markdown
+        else:
+            bullets_text = "\n".join([f"- {b}" for b in (c.bullets or [])])
+            body_md = f"## {c.headline}\n\n**Source:** {c.source_name} | [Original Article]({c.source_url})\n\n### Key Takeaways\n{bullets_text}\n"
+
+        chapters.append({
+            "cluster_id": str(c.cluster_id),
+            "title": c.headline,
+            "source_name": c.source_name,
+            "body_markdown": body_md
+        })
+
+    return {
+        "batch_date": str(briefing.batch_date),
+        "headline": super_summary.headline if super_summary else "Daily Briefing",
+        "synthesis": super_summary.synthesis if super_summary else "",
+        "chapters": chapters
+    }
 
 @app.get("/briefing/today", response_model=schemas.BriefingResponse)
 def get_briefing_today(
