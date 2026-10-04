@@ -12,7 +12,7 @@ import pipeline
 from db import get_db, engine
 from auth import create_access_token, create_refresh_token, get_current_user
 
-from sqlalchemy import text
+from sqlalchemy import text, func
 
 def init_db():
     try:
@@ -460,7 +460,7 @@ def get_admin_stats(db: Session = Depends(get_db), is_admin: bool = Depends(veri
     total_users = db.query(models.User).count()
     premium_users = db.query(models.User).filter(models.User.subscription_status.in_(["premium", "pro", "executive"])).count()
     briefings_today = db.query(models.UserBriefing).filter(models.UserBriefing.batch_date == today).count()
-    cards_today = db.query(models.Card).filter(db.func.date(models.Card.generated_at) == today).count()
+    cards_today = db.query(models.Card).filter(func.date(models.Card.generated_at) == today).count()
     clusters_today = db.query(models.NewsCluster).filter(models.NewsCluster.batch_date == today).count()
     teams_count = db.query(models.Team).count()
     slack_installs = db.query(models.SlackInstallation).count()
