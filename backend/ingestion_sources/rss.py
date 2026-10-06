@@ -1,5 +1,7 @@
 import feedparser
 import logging
+import re
+import html
 from typing import List
 from schemas import RawArticle
 from datetime import datetime, timezone
@@ -7,6 +9,17 @@ from time import mktime
 import hashlib
 
 logger = logging.getLogger(__name__)
+
+def clean_html_text(text: str) -> str:
+    """
+    Strips raw HTML tags and unescapes entities from RSS feeds.
+    """
+    if not text:
+        return ""
+    clean = re.sub(r'<[^>]+>', ' ', text)
+    clean = html.unescape(clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    return clean
 
 DEFAULT_FEEDS = [
     "https://stratechery.com/feed/",
@@ -28,13 +41,15 @@ def fetch_rss_feeds(feed_urls: List[str] = DEFAULT_FEEDS) -> List[RawArticle]:
             
             for entry in feed.entries[:5]:  # Top 5 per feed
                 try:
-                    title = entry.get("title", "")
+                    title = clean_html_text(entry.get("title", ""))
                     link = entry.get("link", "")
                     content = entry.get("summary", "") or entry.get("description", "")
                     
                     # Some RSS feeds include full content in 'content' array
                     if "content" in entry and len(entry.content) > 0:
                         content = entry.content[0].value
+                    
+                    content = clean_html_text(content)
                         
                     author = entry.get("author", source_name)
                     
@@ -50,7 +65,7 @@ def fetch_rss_feeds(feed_urls: List[str] = DEFAULT_FEEDS) -> List[RawArticle]:
                         title=title,
                         url=link,
                         source_name=source_name,
-                        content=content, # This might contain HTML, we'll strip or summarize later
+                        content=content,
                         published_at=published_at,
                         tags=["rss", "tech", "blog"],
                         author=author,

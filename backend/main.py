@@ -179,6 +179,7 @@ def beta_login(request: schemas.BetaLoginRequest, db: Session = Depends(get_db))
         "access_token": access_token,
         "user_id": str(user.id),
         "email": user.email,
+        "subscription_status": user.subscription_status,
         "has_preferences": has_preferences
     }
 
@@ -716,11 +717,18 @@ def get_deep_dive(
     # 1. Check if Deep Dive already exists
     existing_deep_dive = db.query(models.DeepDive).filter(models.DeepDive.cluster_id == request.cluster_id).first()
     if existing_deep_dive:
-        return schemas.DeepDiveResponse(
-            cluster_id=str(existing_deep_dive.cluster_id),
-            title=existing_deep_dive.title,
-            body_markdown=existing_deep_dive.body_markdown
-        )
+        body = existing_deep_dive.body_markdown or ""
+        if "Error Generating Deep Dive" in body or "Error code: 429" in body:
+            logger.warning(f"Purging corrupted cached deep dive for cluster {request.cluster_id}")
+            db.delete(existing_deep_dive)
+            db.commit()
+            existing_deep_dive = None
+        else:
+            return schemas.DeepDiveResponse(
+                cluster_id=str(existing_deep_dive.cluster_id),
+                title=existing_deep_dive.title,
+                body_markdown=existing_deep_dive.body_markdown
+            )
         
     # 2. Fetch the NewsCluster
     cluster = db.query(models.NewsCluster).filter(models.NewsCluster.id == request.cluster_id).first()

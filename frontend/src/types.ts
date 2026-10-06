@@ -24,6 +24,8 @@ export type RootStackParamList = {
   };
   DeepDive: {
     cluster_id: string;
+    source_name?: string;
+    headline?: string;
   };
   ReadAsOne: {
     cluster_ids: string[];
