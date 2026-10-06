@@ -1,11 +1,29 @@
 import os
 import json
 import logging
+import re
+import html
 from typing import List, Dict, Any
 from sentence_transformers import SentenceTransformer, util
 from groq import Groq
 
 logger = logging.getLogger(__name__)
+
+def _clean_text(text: str) -> str:
+    if not text:
+        return ""
+    clean = re.sub(r'<[^>]+>', ' ', text)
+    clean = html.unescape(clean)
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    return clean
+
+def _make_clean_snippet(content: str, max_chars: int = 240) -> str:
+    clean = _clean_text(content)
+    if len(clean) <= max_chars:
+        return clean
+    # Truncate at word boundary
+    cut = clean[:max_chars].rsplit(' ', 1)[0]
+    return f"{cut}..."
 
 # Initialize Groq client
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
@@ -194,7 +212,7 @@ def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str] = 
                 clusters.append({
                     "canonical_title": art.get("title", "Tech Update"),
                     "category": _infer_category(art),
-                    "representative_snippet": str(art.get("content", ""))[:200].replace("\n", " ").strip(),
+                    "representative_snippet": _make_clean_snippet(str(art.get("content", ""))),
                     "matched_tags": _infer_tags(art),
                     "articles": [art]
                 })
@@ -205,7 +223,7 @@ def cluster_articles(articles: List[Dict[str, Any]], thematic_tags: List[str] = 
         clusters.append({
             "canonical_title": leader_art.get("title", "Tech Development"),
             "category": _infer_category(leader_art),
-            "representative_snippet": str(leader_art.get("content", ""))[:200].replace("\n", " ").strip(),
+            "representative_snippet": _make_clean_snippet(str(leader_art.get("content", ""))),
             "matched_tags": _infer_tags(leader_art),
             "articles": cluster_arts
         })

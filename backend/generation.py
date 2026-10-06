@@ -62,7 +62,8 @@ STRICT EDITORIAL RULES:
    • **Core Development:** State the exact product, release, open-weights model, framework, or architectural paper announced.
    • **Technical Architecture & Specs:** Cite concrete technical specifications (e.g. parameter sizes, context window, FP8/INT4 quantization, memory bandwidth, latency, benchmark scores against competitors, or licensing).
    • **Engineering Impact:** Concrete implications for engineers, infrastructure costs, deployment requirements, or migration paths.
-4. TONE: {tone_bucket} (objective, highly technical, dense signal).
+4. BAN META BULLETS: NEVER include bullets like "Source: ...", "Source Insight: ...", or meta-attribution lines. Every bullet MUST deliver substantive technical signal.
+5. TONE: {tone_bucket} (objective, highly technical, dense signal).
 
 Your output MUST be a valid JSON object matching this schema exactly:
 {{
@@ -98,8 +99,8 @@ Articles Context:
             "headline": cluster_title,
             "bullets": [
                 f"**Core Development:** {snippet if snippet else 'Key technical advancement released today.'}",
-                f"**Technical Architecture & Specs:** High-throughput performance metrics and architecture details documented in source announcement.",
-                f"**Engineering Impact:** Production deployment and developer tooling integration available via {first_art.get('source_name', 'Tech Intelligence')}."
+                "**Technical Architecture & Specs:** Performance benchmarks, runtime characteristics, and architectural specifications documented in source announcement.",
+                "**Engineering Impact:** Production deployment pathways, framework integrations, and developer workflow enhancements provided."
             ],
             "source_name": first_art.get("source_name") or first_art.get("source") or "Tech Intelligence",
             "source_url": first_art.get("url", "https://news.ycombinator.com")

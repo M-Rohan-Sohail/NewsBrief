@@ -60,8 +60,31 @@ export default function CardModeScreen({ route, navigation }: Props) {
   };
 
   const renderBullet = (bullet: string, idx: number, theme: SourceTheme) => {
-    // Format bold lead-in tags if present e.g. **Core Development:**
-    const parts = bullet.split(/(\*\*.*?\*\*)/g);
+    // 1. Sanitize any raw HTML tags and unescape common HTML entities
+    let clean = (bullet || '')
+      .replace(/<[^>]*>?/gm, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // 2. Filter out redundant meta bullets (e.g. "Source: ...", "Source Insight: ...")
+    const lower = clean.toLowerCase();
+    if (
+      lower.startsWith('source:') || 
+      lower.startsWith('source insight:') || 
+      lower.startsWith('**source:') || 
+      lower.startsWith('**source insight:')
+    ) {
+      return null;
+    }
+
+    // 3. Format bold lead-in tags if present e.g. **Core Development:**
+    const parts = clean.split(/(\*\*.*?\*\*)/g);
     
     return (
       <View key={idx} style={[styles.bulletCard, { borderColor: 'rgba(255, 255, 255, 0.08)' }]}>

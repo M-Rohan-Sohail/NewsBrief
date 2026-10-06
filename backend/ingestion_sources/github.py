@@ -30,12 +30,27 @@ def fetch_github_trending() -> List[RawArticle]:
             try:
                 published_at = datetime.fromisoformat(item.get("created_at").replace('Z', '+00:00')) if item.get("created_at") else datetime.now(timezone.utc)
                 
-                # Use description as content, fallback to name
-                content = item.get("description") or item.get("name")
-                language = item.get("language")
+                desc = item.get("description") or "Open source software project"
+                stars = item.get("stargazers_count", 0)
+                forks = item.get("forks_count", 0)
+                language = item.get("language") or "Multi-language"
+                topics = item.get("topics", []) or []
+                topics_str = ", ".join(topics[:6]) if topics else "developer-tools"
+                license_name = (item.get("license") or {}).get("spdx_id") or "Open Source"
+
+                # Rich technical summary for LLM summarization and clustering
+                content = (
+                    f"Repository: {item.get('full_name')}\n"
+                    f"Stars: {stars:,} | Forks: {forks:,} | Language: {language} | License: {license_name}\n"
+                    f"Topics: {topics_str}\n"
+                    f"Overview: {desc}\n"
+                    f"URL: {item.get('html_url')}"
+                )
+                
                 tags = ["github", "opensource"]
                 if language:
                     tags.append(language.lower())
+                tags.extend([t.lower() for t in topics[:4]])
                 
                 article = RawArticle(
                     id=f"github_{item.get('id')}",
@@ -46,7 +61,7 @@ def fetch_github_trending() -> List[RawArticle]:
                     published_at=published_at,
                     tags=tags,
                     author=item.get("owner", {}).get("login"),
-                    score=item.get("stargazers_count", 0)
+                    score=stars
                 )
                 
                 articles.append(article)
