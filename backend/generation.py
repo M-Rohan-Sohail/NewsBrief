@@ -198,7 +198,8 @@ Provide 3 crisp, bulleted action items for engineering leadership and founders.
 STRICT RULES:
 - BAN generic filler and marketing fluff (NO "paradigm shift", "holistic acceleration", "physical backbone").
 - Focus strictly on concrete numbers, architecture choices, and developer trade-offs.
-- Total length: ~350 to 450 words (cleanly fitting within 800 tokens).
+- Target length: ~300 to 350 words total so all 4 sections are completed with high signal within token budget.
+- Conclude section 4 with exactly 3 complete, concise bullet points.
 
 Topic: {cluster_title_clean}
 
