@@ -173,38 +173,38 @@ def generate_deep_dive(cluster_title: str, articles_text: str) -> str:
 
     prompt = f"""
 You are a Principal AI Systems Architect authoring an executive technical deep dive for engineers and technical founders.
-Deliver an authoritative, highly analytical breakdown of the subject.
+Deliver an authoritative, highly analytical breakdown of the subject in standard professional mixed-case English.
 
 STRUCTURE REQUIREMENTS:
 Produce exactly 4 structured sections formatted in clean GitHub-style Markdown:
 
 ## 1. Executive Summary
-State the core announcement, creator/organization, development timeline, and architectural significance in 2 to 3 dense sentences.
+State the core announcement, creator/organization, and architectural significance in exactly 2 dense sentences.
 
 ## 2. Technical Architecture & Benchmarks
-Provide 3 to 4 dense bullet points covering:
-- Model/system architecture, parameter scale, layers, or training methodology.
-- Quantifiable benchmark comparisons, throughput, memory bandwidth, or latency metrics.
-- Hardware requirements, context windows, tokenizers, or quantization formats (e.g., FP8, AWQ, GGUF).
+Provide 3 dense, bulleted technical facts (1-2 sentences each) covering:
+• Model or system architecture, parameter scale, or algorithmic approach.
+• Quantifiable benchmark performance, inference latency, or throughput metrics.
+• Hardware requirements, quantization formats, or memory footprint.
 
 ## 3. Engineering & Ecosystem Impact
-Write 2 concise paragraphs analyzing:
-- How this changes production workflows for engineers compared to current alternatives.
-- Trade-offs, compute economics, licensing constraints, or integration obstacles.
+Write 1 focused paragraph (3-4 sentences) analyzing developer workflow changes, production trade-offs, compute economics, and integration constraints compared to current alternatives.
 
 ## 4. Key Takeaways
-Provide 3 crisp, bulleted action items for engineering leadership and founders.
+Provide exactly 3 complete, bulleted takeaways for engineering leadership:
+• **Architecture Strategy:** Specific deployment or architectural recommendation.
+• **Compute & Efficiency:** Key operational or cost insight.
+• **Ecosystem Outlook:** Strategic production or tooling takeaway.
 
-STRICT RULES:
-- BAN generic filler and marketing fluff (NO "paradigm shift", "holistic acceleration", "physical backbone").
-- Focus strictly on concrete numbers, architecture choices, and developer trade-offs.
-- Target length: ~300 to 350 words total so all 4 sections are completed with high signal within token budget.
-- Conclude section 4 with exactly 3 complete, concise bullet points.
+STRICT EDITORIAL RULES:
+- Write in natural capitalization (NEVER use ALL CAPS).
+- BAN generic marketing buzzwords (NO "paradigm shift", "holistic acceleration", "physical backbone", "interconnected web").
+- Keep length to ~250 words total so all 4 sections conclude completely within budget.
 
 Topic: {cluster_title_clean}
 
 Source Material:
-{articles_text_clean[:2500]}
+{articles_text_clean[:2200]}
 """
     try:
         response = groq_client.chat.completions.create(
