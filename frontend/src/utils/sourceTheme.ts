@@ -55,7 +55,30 @@ export function getSourceTheme(sourceName?: string): SourceTheme {
     };
   }
   
-  // Stratechery, Tech media, or general tech feeds
+  // Publications & Blogs
+  let tag = (sourceName || 'TECH INTELLIGENCE').trim();
+  const lower = tag.toLowerCase();
+
+  if (lower.includes('berkeley') || lower.includes('bair')) {
+    tag = 'BAIR BLOG';
+  } else if (lower.includes('mit tech') || lower.includes('technology review')) {
+    tag = 'MIT TECH';
+  } else if (lower.includes('deepmind')) {
+    tag = 'GOOGLE DEEPMIND';
+  } else if (lower.includes('openai')) {
+    tag = 'OPENAI';
+  } else if (lower.includes('anthropic')) {
+    tag = 'ANTHROPIC';
+  } else if (lower.includes('stratechery')) {
+    tag = 'STRATECHERY';
+  } else if (lower.includes('techcrunch')) {
+    tag = 'TECHCRUNCH';
+  } else if (lower.includes('the verge')) {
+    tag = 'THE VERGE';
+  } else if (tag.length > 18) {
+    tag = tag.slice(0, 16).trim() + '…';
+  }
+
   return {
     primary: '#EC4899',
     gradient: ['#4C0519', '#1E1B4B', '#0A0F1D'],
@@ -63,8 +86,9 @@ export function getSourceTheme(sourceName?: string): SourceTheme {
     badgeBorder: 'rgba(236, 72, 153, 0.4)',
     badgeText: '#F472B6',
     icon: '📰',
-    tag: (sourceName || 'TECH INTELLIGENCE').toUpperCase(),
+    tag: tag.toUpperCase(),
     buttonBg: '#EC4899',
     buttonText: '#4C0519'
   };
 }
+

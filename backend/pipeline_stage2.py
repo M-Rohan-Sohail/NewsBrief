@@ -5,9 +5,9 @@ import uuid
 from sqlalchemy import asc
 
 from db import SessionLocal
-from models import UserPreference, NewsCluster, Card, SuperSummary, UserBriefing
+from models import UserPreference, NewsCluster, Card, SuperSummary, UserBriefing, DeepDive
 from clustering import get_embedder
-from generation import generate_super_summary
+from generation import generate_super_summary, generate_deep_dive
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -124,6 +124,28 @@ def run_stage2():
                 db.add(super_summary)
                 db.flush() # flush to get the id if needed, though we have it
             
+            # 4b. Ensure Deep Dive exists for every matched cluster in user's briefing
+            for c in matched_clusters:
+                existing_dd = db.query(DeepDive).filter(DeepDive.cluster_id == c.id).first()
+                if not existing_dd:
+                    try:
+                        logger.info(f"Pre-generating missing DeepDive for cluster '{c.canonical_title}'...")
+                        text = f"Title: {c.canonical_title}\nOverview: {c.representative_snippet}\n"
+                        for ref in (c.article_refs or []):
+                            text += f"- {ref.get('title')}: {ref.get('url')}\n"
+                        body_md = generate_deep_dive(c.canonical_title, text)
+                        new_dd = DeepDive(
+                            cluster_id=c.id,
+                            title=f"Deep Dive: {c.canonical_title}",
+                            body_markdown=body_md,
+                            pre_generated=True,
+                            generated_at=now
+                        )
+                        db.add(new_dd)
+                        db.flush()
+                    except Exception as e:
+                        logger.warning(f"Could not pre-generate DeepDive for {c.id}: {e}")
+
             # 5. Create User Briefing
             logger.info(f"Saving UserBriefing for {user_id}")
             

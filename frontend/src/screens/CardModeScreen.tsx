@@ -121,7 +121,13 @@ export default function CardModeScreen({ route, navigation }: Props) {
         <View style={styles.topBar}>
           <View style={[styles.sourceBadge, { backgroundColor: theme.badgeBg, borderColor: theme.badgeBorder }]}>
             <Text style={styles.sourceIcon}>{theme.icon}</Text>
-            <Text style={[styles.sourceBadgeText, { color: theme.badgeText }]}>{theme.tag}</Text>
+            <Text 
+              style={[styles.sourceBadgeText, { color: theme.badgeText }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {theme.tag}
+            </Text>
           </View>
 
           <View style={styles.topRightControls}>
@@ -139,13 +145,17 @@ export default function CardModeScreen({ route, navigation }: Props) {
           </View>
         </View>
 
-        {/* Scrollable Card Body (Prevents Any Button Clipping) */}
+        {/* Scrollable Card Body */}
         <ScrollView 
           style={styles.bodyScrollView} 
           contentContainerStyle={styles.bodyScrollContent}
-          showsVerticalScrollIndicator={false}
+          showsVerticalScrollIndicator={true}
+          indicatorStyle="white"
+          bounces={true}
         >
-          <Text style={styles.headline}>{item.headline}</Text>
+          <Text style={[styles.headline, item.headline.length > 70 && styles.headlineCompact]}>
+            {item.headline}
+          </Text>
 
           <View style={styles.bulletsContainer}>
             {item.bullets.map((bullet, idx) => renderBullet(bullet, idx, theme))}
@@ -235,6 +245,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 20,
     borderWidth: 1,
+    maxWidth: SCREEN_WIDTH * 0.52,
   },
   sourceIcon: {
     fontSize: 14,
@@ -245,6 +256,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
+    flexShrink: 1,
   },
   topRightControls: {
     flexDirection: 'row',
@@ -283,41 +295,46 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   bodyScrollContent: {
-    paddingHorizontal: 22,
-    paddingTop: Platform.OS === 'ios' ? 120 : 105,
-    paddingBottom: 130, // Guarantees zero clipping behind the bottom button
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'ios' ? 98 : 84,
+    paddingBottom: 110,
   },
   headline: {
     color: '#FFFFFF',
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: '800',
-    marginBottom: 24,
-    lineHeight: 34,
+    marginBottom: 18,
+    lineHeight: 32,
     letterSpacing: -0.4,
   },
+  headlineCompact: {
+    fontSize: 21,
+    lineHeight: 28,
+    marginBottom: 14,
+  },
   bulletsContainer: {
-    marginTop: 4,
+    marginTop: 2,
   },
   bulletCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    padding: 14,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 12,
     borderWidth: 1,
-    marginBottom: 14,
+    marginBottom: 10,
   },
   bulletIndicator: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    marginTop: 8,
-    marginRight: 12,
+    marginTop: 7,
+    marginRight: 11,
   },
   bulletText: {
     color: '#E2E8F0',
-    fontSize: 15,
-    lineHeight: 23,
+    fontSize: 14.5,
+    lineHeight: 21.5,
     flex: 1,
     fontWeight: '400',
   },
@@ -335,10 +352,10 @@ const styles = StyleSheet.create({
   },
   bottomBarFade: {
     position: 'absolute',
-    top: -30,
+    top: -24,
     left: 0,
     right: 0,
-    height: 120,
+    height: 100,
   },
   deepDiveButton: {
     paddingVertical: 16,

@@ -676,6 +676,28 @@ def generate_briefing_now(
         db.add(existing_briefing)
         
     db.commit()
+
+    # 5b. Guarantee Deep Dives for all matched briefing clusters so they load in <100ms
+    for c in matched_clusters:
+        existing_dd = db.query(models.DeepDive).filter(models.DeepDive.cluster_id == c.id).first()
+        if not existing_dd:
+            try:
+                from generation import generate_deep_dive
+                text = f"Title: {c.canonical_title}\nOverview: {c.representative_snippet}\n"
+                for ref in (c.article_refs or []):
+                    text += f"- {ref.get('title')}: {ref.get('url')}\n"
+                body_md = generate_deep_dive(c.canonical_title, text)
+                new_dd = models.DeepDive(
+                    cluster_id=c.id,
+                    title=f"Deep Dive: {c.canonical_title}",
+                    body_markdown=body_md,
+                    pre_generated=True,
+                    generated_at=datetime.now(timezone.utc)
+                )
+                db.add(new_dd)
+                db.commit()
+            except Exception as e:
+                logger.warning(f"Could not pre-generate DeepDive for {c.id}: {e}")
     
     # 6. Dispatch Background Tasks
     from services.email_service import send_daily_digest
@@ -713,6 +735,7 @@ def get_deep_dive(
 ):
     import generation
     import ingestion
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     
     # 1. Check if Deep Dive already exists
     existing_deep_dive = db.query(models.DeepDive).filter(models.DeepDive.cluster_id == request.cluster_id).first()
@@ -735,14 +758,26 @@ def get_deep_dive(
     if not cluster:
         raise HTTPException(status_code=404, detail="News cluster not found")
         
-    # 3. Extract full text from URLs
+    # 3. Extract text from URLs concurrently with a strict 2.5s timeout
     articles_text = ""
-    for idx, ref in enumerate(cluster.article_refs):
-        url = ref.get("url")
-        if url:
-            text = ingestion.extract_article_text(url)
-            if text:
-                articles_text += f"\n\n--- Source {idx+1}: {ref.get('title')} ---\n{text}"
+    valid_refs = [r for r in (cluster.article_refs or []) if r.get("url")]
+    
+    def fetch_url(ref_item):
+        try:
+            return (ref_item.get("title", ""), ingestion.extract_article_text(ref_item["url"]))
+        except Exception:
+            return None
+
+    if valid_refs:
+        try:
+            with ThreadPoolExecutor(max_workers=min(len(valid_refs), 4)) as executor:
+                futures = [executor.submit(fetch_url, r) for r in valid_refs]
+                for future in as_completed(futures, timeout=2.5):
+                    res = future.result()
+                    if res and res[1]:
+                        articles_text += f"\n\n--- Source: {res[0]} ---\n{res[1]}"
+        except Exception as e:
+            logger.info(f"Concurrent extraction timeout or fallback for cluster {cluster.id}: {e}")
                 
     if not articles_text.strip():
         articles_text = f"Title: {cluster.canonical_title}\nOverview: {cluster.representative_snippet}"
@@ -758,9 +793,15 @@ def get_deep_dive(
         pre_generated=False,
         generated_at=datetime.now(timezone.utc)
     )
-    db.add(new_deep_dive)
-    db.commit()
-    db.refresh(new_deep_dive)
+    try:
+        db.add(new_deep_dive)
+        db.commit()
+        db.refresh(new_deep_dive)
+    except Exception:
+        db.rollback()
+        existing = db.query(models.DeepDive).filter(models.DeepDive.cluster_id == cluster.id).first()
+        if existing:
+            new_deep_dive = existing
     
     return schemas.DeepDiveResponse(
         cluster_id=str(new_deep_dive.cluster_id),
@@ -810,21 +851,49 @@ def get_read_as_one(
 
 @app.get("/briefing/today", response_model=schemas.BriefingResponse)
 def get_briefing_today(
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
     today = datetime.now(timezone.utc).date()
     
-    # Get the most recent briefing for the user
-    latest_briefing = db.query(models.UserBriefing)\
-        .filter(models.UserBriefing.user_id == current_user.id)\
-        .order_by(models.UserBriefing.batch_date.desc())\
+    # 1. Try to find a briefing strictly generated for today
+    today_briefing = db.query(models.UserBriefing)\
+        .filter(models.UserBriefing.user_id == current_user.id, models.UserBriefing.batch_date == today)\
         .first()
+        
+    latest_briefing = today_briefing
+    if not latest_briefing:
+        # Fall back to the most recent briefing
+        latest_briefing = db.query(models.UserBriefing)\
+            .filter(models.UserBriefing.user_id == current_user.id)\
+            .order_by(models.UserBriefing.batch_date.desc())\
+            .first()
         
     if not latest_briefing:
         raise HTTPException(status_code=404, detail="No briefing found. Please ensure you have set your preferences and wait for the next daily batch.")
         
     is_preparing_today = latest_briefing.batch_date != today
+
+    # If today's briefing is missing, trigger an automated background catch-up
+    if is_preparing_today:
+        def background_catchup(user_id):
+            try:
+                from db import SessionLocal
+                from pipeline_stage1 import run_stage1
+                from pipeline_stage2 import run_stage2
+                bg_db = SessionLocal()
+                cluster_count = bg_db.query(models.NewsCluster).filter(models.NewsCluster.batch_date == today).count()
+                if cluster_count == 0:
+                    logger.info("Catchup: No clusters for today, executing Stage 1...")
+                    run_stage1()
+                logger.info(f"Catchup: Executing Stage 2 for user {user_id}...")
+                run_stage2()
+                bg_db.close()
+            except Exception as ex:
+                logger.error(f"Catchup background generation error: {ex}")
+
+        background_tasks.add_task(background_catchup, current_user.id)
     
     # Fetch Super Summary
     super_summary = db.query(models.SuperSummary).filter(models.SuperSummary.id == latest_briefing.super_summary_id).first()

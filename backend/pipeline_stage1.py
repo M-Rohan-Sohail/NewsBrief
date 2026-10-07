@@ -143,9 +143,9 @@ def run_stage1():
             # Pacing sleep between clusters to avoid bursting Groq RPM limits
             time.sleep(1.2)
 
-        # Step C: Pre-generate Deep Dives for the top clusters so Read as One is instant
-        logger.info("Pre-generating Deep Dives for top clusters...")
-        for cluster_id, cluster_data, title in cluster_records[:4]:
+        # Step C: Pre-generate Deep Dives for all top clusters so Deep Dive & Read as One are instant
+        logger.info(f"Pre-generating Deep Dives for top {len(cluster_records[:12])} clusters...")
+        for cluster_id, cluster_data, title in cluster_records[:12]:
             try:
                 body_md = pre_generate_deep_dive(cluster_data)
                 dd = DeepDive(
@@ -156,7 +156,7 @@ def run_stage1():
                     generated_at=now
                 )
                 db.add(dd)
-                time.sleep(2.0)
+                time.sleep(1.5)
             except Exception as e:
                 logger.warning(f"Could not pre-generate deep dive for '{title}': {e}")
                 
